@@ -1,7 +1,7 @@
 #' Compute Zonal Statistics for Multiple Soil Products
 #'
 #' This function calculates zonal statistics for soil property rasters from POLARIS (PSP),
-#' SoilGrids v2 (SG2), SOLUS100 (SOL), and CSRL Soil props 800. It ensures that depth intervals from different
+#' SoilGrids v2 (SG2), SOLUS100 (SOL), CSRL Soil props 800, and SSURGO/gNATSGO/RSS (SGO). It ensures that depth intervals from different
 #' datasets are consistently translated, and supports depth-weighted averaging.
 #'
 #' @param soil_data A `SpatRaster` or list of `SpatRaster` objects from `fetch_PSP`, `fetch_SG2`, or `fetch_SOL`.
