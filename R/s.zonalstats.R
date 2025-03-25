@@ -4,7 +4,7 @@
 #' SoilGrids v2 (SG2), SOLUS100 (SOL), CSRL Soil props 800, and SSURGO/gNATSGO/RSS (SGO). It ensures that depth intervals from different
 #' datasets are consistently translated, and supports depth-weighted averaging.
 #'
-#' @param soil_data A `SpatRaster` or list of `SpatRaster` objects from `fetch_PSP`, `fetch_SG2`, or `fetch_SOL`.
+#' @param soil_data A `SpatRaster` or list of `SpatRaster` objects from `fetch_PSP`, `fetch_SG2`, `fetch_SOL` or `fetch_SGO`.
 #' @param tdepth Numeric. Top depth of interest (cm).
 #' @param bdepth Numeric. Bottom depth of interest (cm).
 #' @param props Character vector. Standardized soil properties (e.g., `"clay"`, `"sand"`, `"bd"`).
