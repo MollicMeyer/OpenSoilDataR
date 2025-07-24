@@ -458,7 +458,7 @@ s.zonalstats <- function(
     dataset_name <- attr(soil_data, "product")
     if (is.null(dataset_name)) {
       stop(
-        "Dataset type unknown. Ensure data comes from fetch_PSP, fetch_SG2, or fetch_SOL."
+        "Dataset type unknown. Ensure data comes from fetch_PSP, fetch_SG2, fetch_SOL, fetch_CSRL, or fetch_SGO."
       )
     }
     datasets[[dataset_name]] <- soil_data
