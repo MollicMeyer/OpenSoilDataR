@@ -22,6 +22,7 @@ plot_depth_functions <- function(
   library(latticeExtra)
 
   # Property Lookup Table for use in s.zonalstats()
+  # Property Lookup Table for use in s.zonalstats()
   property_lookup <- list(
     # Water Retention
     "wtenthbar" = c(
@@ -300,8 +301,23 @@ plot_depth_functions <- function(
 
     for (v in variables) {
       actual_name <- property_lookup[[v]][[src]]
-      if (!is.na(actual_name) && actual_name %in% horizonNames(spc)) {
-        names(horizons(spc))[names(horizons(spc)) == actual_name] <- v
+      if (!is.na(actual_name)) {
+        if (actual_name %in% horizonNames(spc)) {
+          names(horizons(spc))[names(horizons(spc)) == actual_name] <- v
+        } else {
+          stop(sprintf(
+            "Variable '%s' (mapped as '%s') not found in horizons of SPC for source '%s'",
+            v,
+            actual_name,
+            src
+          ))
+        }
+      } else {
+        stop(sprintf(
+          "Variable '%s' is not defined for source '%s' in the lookup table",
+          v,
+          src
+        ))
       }
     }
 
