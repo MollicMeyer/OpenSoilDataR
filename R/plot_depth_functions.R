@@ -356,7 +356,7 @@ plot_depth_functions <- function(
 
   # Final plot using source directly
   xyplot(
-    bottom ~ mean | variable,
+    top ~ mean | variable,
     data = slab_df,
     lower = slab_df$lower,
     upper = slab_df$upper,
