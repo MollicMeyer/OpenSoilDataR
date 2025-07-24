@@ -7,7 +7,13 @@
 #' @param id_column ID column in `locations` (default: "Name")
 #' @return A `SoilProfileCollection` object
 #' @export
-to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_column = "Name") {
+to_spc <- function(
+  rstack,
+  mode = "raster",
+  locations = NULL,
+  stat = "mean",
+  id_column = "Name"
+) {
   require(terra)
   require(dplyr)
   require(tidyr)
@@ -15,7 +21,6 @@ to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_
   require(sf)
   require(stringr)
 
-  # Use the same depth lookup as raster_to_spc()
   depth_interval_lookup <- list(
     "0_5" = c("0_5", "0-5cm", "0_cm", "0-5"),
     "5_15" = c("5_15", "5-15cm", "5_cm", "0-25"),
@@ -36,13 +41,28 @@ to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_
 
   parse_layers <- function(df, idcol = "peiid") {
     long_df <- df %>%
-      pivot_longer(cols = -all_of(idcol), names_to = "layer", values_to = "value") %>%
-      separate(layer, into = c("variable", "depth_label"), sep = "_", remove = FALSE) %>%
+      pivot_longer(
+        cols = -all_of(idcol),
+        names_to = "layer",
+        values_to = "value"
+      ) %>%
+      separate(
+        layer,
+        into = c("variable", "depth_label"),
+        sep = "_",
+        remove = FALSE
+      ) %>%
       rowwise() %>%
       mutate(
-        matched_label = names(depth_interval_lookup)[
-          sapply(depth_interval_lookup, function(patterns) any(str_detect(depth_label, paste0("^", patterns, "$", collapse = "|")))
-        ],
+        matched_label = {
+          matches <- sapply(depth_interval_lookup, function(patterns) {
+            any(str_detect(
+              depth_label,
+              paste0("^(", paste(patterns, collapse = "|"), ")$")
+            ))
+          })
+          names(depth_interval_lookup)[which(matches)[1]]
+        },
         hzdept = depth_range_lookup[[matched_label]][1],
         hzdepb = depth_range_lookup[[matched_label]][2]
       ) %>%
@@ -53,7 +73,6 @@ to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_
       pivot_wider(names_from = variable, values_from = value)
   }
 
-  # MODE: RASTER
   if (mode == "raster") {
     df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
     df$peiid <- paste0("cell_", df$cell)
@@ -65,7 +84,6 @@ to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_
     return(hz)
   }
 
-  # MODE: POINTS
   if (mode == "points") {
     stopifnot(!is.null(locations))
     locations <- vect(locations)
@@ -78,8 +96,14 @@ to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_
     return(hz)
   }
 
-  # MODE: ZONAL
   if (mode == "zonal") {
+    stopifnot(!is.null(locations))
+    # Subset only polygons with an ID present
+    locations <- vect(locations)
+    if (!id_column %in% names(locations)) {
+      stop("ID column not found in 'locations'.")
+    }
+    locations <- locations[!is.na(locations[[id_column]]), ]
     stopifnot(!is.null(locations))
     locations <- vect(locations)
     crs_rstack <- crs(rstack)
@@ -87,13 +111,16 @@ to_spc <- function(rstack, mode = "raster", locations = NULL, stat = "mean", id_
       locations <- project(locations, crs_rstack)
     }
 
-    # Collect stats
-    stat_list <- lapply(stat, function(s) terra::zonal(rstack, locations, fun = s))
+    stat_list <- lapply(stat, function(s) {
+      terra::zonal(rstack, locations, fun = s)
+    })
     df <- Reduce(function(x, y) full_join(x, y, by = id_column), stat_list)
-    df$peiid <- df[[id_column]]
+    df$peiid <- locations[[id_column]]
     hz <- parse_layers(df, idcol = "peiid")
     depths(hz) <- peiid ~ hzdept + hzdepb
-    site(hz) <- df %>% select(peiid)
+    site(hz) <- locations |>
+      as.data.frame() |>
+      select(peiid = all_of(id_column))
     return(hz)
   }
 
