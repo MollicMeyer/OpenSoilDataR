@@ -22,7 +22,38 @@ plot_depth_functions <- function(
   library(latticeExtra)
 
   # Property Lookup Table for use in s.zonalstats()
-  data("property_lookup", package = "OpenSoilDataR", envir = environment())
+  property_lookup <- list(
+    # Texture
+    "clay" = c(
+      PSP = "clay_mean",
+      SG2 = "clay",
+      SOL = "claytotal",
+      CSRL = "clay_profile",
+      SGO = "claytotal_r"
+    ),
+    "sand" = c(
+      PSP = "sand_mean",
+      SG2 = "sand",
+      SOL = "sandtotal",
+      CSRL = "sand_profile",
+      SGO = "sandtotal_r"
+    ),
+    "silt" = c(
+      PSP = "silt_mean",
+      SG2 = "silt",
+      SOL = "silttotal",
+      CSRL = "silt_profile",
+      SGO = "silttotal_r"
+    ),
+    # Add additional property mappings here as needed
+    "ph" = c(
+      PSP = "ph_mean",
+      SG2 = "phh2o",
+      SOL = "ph1to1h2o",
+      CSRL = "ph_profile",
+      SGO = "ph1to1h2o_r"
+    )
+  )
 
   # Rename variables in horizons
   for (i in seq_along(spc_list)) {
