@@ -124,11 +124,9 @@ to_spc <- function(
     })
     df <- Reduce(function(x, y) full_join(x, y, by = id_column), stat_list)
     df$peiid <- df[[id_column]]
-    hz <- parse_layers(df, idcol = "peiid")
+    hz <- parse_layers(df, idcol = id_column)
     depths(hz) <- peiid ~ hzdept + hzdepb
-    site(hz) <- locations |>
-      as.data.frame() |>
-      select(peiid = all_of(id_column))
+    site(hz) <- df %>% select(peiid = all_of(id_column))
     return(hz)
   }
 
