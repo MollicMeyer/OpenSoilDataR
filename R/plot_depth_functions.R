@@ -23,7 +23,7 @@ plot_depth_functions <- function(
 
   # Assign source label to each SPC
   for (i in seq_along(spc_list)) {
-    source_name <- source_vector[i]
+    source_name <- source_labels[i]
     profile_id(spc_list[[i]]) <- paste0(
       source_name,
       "_",
