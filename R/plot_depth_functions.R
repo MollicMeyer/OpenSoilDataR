@@ -365,7 +365,7 @@ plot_depth_functions <- function(
     alpha = 0.5,
     ylab = "Depth (cm)",
     xlab = "",
-    ylim = c(max(slab_df$bottom), 0),
+    ylim = c(max(slab_structure), 0),
     layout = c(length(variables), 1),
     scales = list(
       x = list(tick.number = 4, alternating = 2, relation = 'free', cex = 1.0),
