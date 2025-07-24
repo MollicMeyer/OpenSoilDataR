@@ -15,7 +15,7 @@
 #' @param export Logical. If `TRUE`, saves GeoTIFFs to disk.
 #' @param output_dir Character. Directory to save exported files (required if `export = TRUE`).
 #' @param suffix Optional character string to append to output filenames.
-#' 
+#'
 #' @return A list with:
 #'   \itemize{
 #'     \item \code{stack}: SpatRaster of queried layers
@@ -45,7 +45,7 @@
 #' Total Silt \tab silttotal_r \cr
 #' And more (see SDA documentation) \tab ...
 #' }
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' aoi <- rast("your_dem.tif")
@@ -64,66 +64,130 @@
 #' )
 #' }
 
-
-fetch_SGO <- function(aoi,
-                     properties,
-                     depths = list(c(0,5), c(5,15), c(15,30), c(30,60), c(60,100), c(100,200)),
-                     method = "Dominant Component (Numeric)",
-                     tosoc = FALSE,
-                     crs = "EPSG:4326",
-                     res = 30,
-                     db = "gssurgo",
-                     export = FALSE,
-                     output_dir = NULL,
-                     suffix = "") {
-  
+fetch_SGO <- function(
+  aoi,
+  properties,
+  depths = list(
+    c(0, 5),
+    c(5, 15),
+    c(15, 30),
+    c(30, 60),
+    c(60, 100),
+    c(100, 200)
+  ),
+  method = "Dominant Component (Numeric)",
+  tosoc = FALSE,
+  crs = "EPSG:4326",
+  res = 30,
+  db = "gssurgo",
+  export = FALSE,
+  output_dir = NULL,
+  suffix = ""
+) {
   stopifnot(requireNamespace("terra"))
   stopifnot(requireNamespace("soilDB"))
-  
+
   # Supported numeric methods
-  valid_methods <- c("Dominant Component (Numeric)", "Weighted Average", "Min/Max")
-  if (!method %in% valid_methods) stop("Invalid method: choose from ", paste(valid_methods, collapse = ", "))
-  
+  valid_methods <- c(
+    "Dominant Component (Numeric)",
+    "Weighted Average",
+    "Min/Max"
+  )
+  if (!method %in% valid_methods) {
+    stop("Invalid method: choose from ", paste(valid_methods, collapse = ", "))
+  }
+
   # Valid horizon-level properties
   valid_props <- c(
-    "wtenthbar_r", "wthirdbar_r", "wfifteenbar_r", "awc_r", "pbray1_r",
-    "dbtenthbar_r", "dbthirdbar_r", "dbfifteenbar_r", "dbovendry_r", "claysizedcarb_r",
-    "caco3_r", "cec7_r", "sandco_r", "siltco_r", "ecec_r", "ec15_r", "ec_r",
-    "esp_r", "extral_r", "extracid_r", "sandfine_r", "siltfine_r", "freeiron_r",
-    "gypsum_r", "kffact", "kifact", "krfact", "kwfact", "lep_r", "ll_r", "sandmed_r",
-    "om_r", "aloxalate_r", "feoxalate_r", "poxalate_r", "pi_r", "frag3to10_r",
-    "fraggt10_r", "fiberrubbedpct_r", "wsatiated_r", "ksat_r", "sar_r", "sumbases_r",
-    "claytotal_r", "ptotal_r", "sandtotal_r", "silttotal_r", "fiberunrubbedpct_r",
-    "sandvc_r", "sandvf_r", "ph2osoluble_r", "sieveno10_r", "sieveno200_r", "sieveno4_r",
-    "sieveno40_r", "ph01mcacl2_r", "ph1to1h2o_r", "phoxidized_r"
+    "wtenthbar_r",
+    "wthirdbar_r",
+    "wfifteenbar_r",
+    "awc_r",
+    "pbray1_r",
+    "dbtenthbar_r",
+    "dbthirdbar_r",
+    "dbfifteenbar_r",
+    "dbovendry_r",
+    "claysizedcarb_r",
+    "caco3_r",
+    "cec7_r",
+    "sandco_r",
+    "siltco_r",
+    "ecec_r",
+    "ec15_r",
+    "ec_r",
+    "esp_r",
+    "extral_r",
+    "extracid_r",
+    "sandfine_r",
+    "siltfine_r",
+    "freeiron_r",
+    "gypsum_r",
+    "kffact",
+    "kifact",
+    "krfact",
+    "kwfact",
+    "lep_r",
+    "ll_r",
+    "sandmed_r",
+    "om_r",
+    "aloxalate_r",
+    "feoxalate_r",
+    "poxalate_r",
+    "pi_r",
+    "frag3to10_r",
+    "fraggt10_r",
+    "fiberrubbedpct_r",
+    "wsatiated_r",
+    "ksat_r",
+    "sar_r",
+    "sumbases_r",
+    "claytotal_r",
+    "ptotal_r",
+    "sandtotal_r",
+    "silttotal_r",
+    "fiberunrubbedpct_r",
+    "sandvc_r",
+    "sandvf_r",
+    "ph2osoluble_r",
+    "sieveno10_r",
+    "sieveno200_r",
+    "sieveno4_r",
+    "sieveno40_r",
+    "ph01mcacl2_r",
+    "ph1to1h2o_r",
+    "phoxidized_r"
   )
-  
+
   if (any(!properties %in% valid_props)) {
-    stop("Invalid property(ies): ", paste(properties[!properties %in% valid_props], collapse = ", "))
+    stop(
+      "Invalid property(ies): ",
+      paste(properties[!properties %in% valid_props], collapse = ", ")
+    )
   }
-  
+
   # Get mukey raster
   cat("Querying mukey raster from:", db, "\n")
   mu_raster <- soilDB::mukey.wcs(aoi = aoi, db = db, res = res)
   mukeys <- unique(terra::values(mu_raster))
   mukeys <- mukeys[!is.na(mukeys)]
-  
+
   raster_stack <- list()
   file_paths <- c()
-  
+
   for (prop in properties) {
     for (depth in depths) {
       top <- depth[1]
       bottom <- depth[2]
-      
+
       query_prop <- prop
       out_prop <- prop
-      
+
       if (tosoc && prop == "om_r") {
-        query_prop <- "om_r"       # Always query om_r
-        out_prop <- "oc_r"         # Rename output to oc_r
+        query_prop <- "om_r" # Always query om_r
+        out_prop <- "oc_r" # Rename output to oc_r
       }
-      
+
       cat("Querying", query_prop, "|", top, "-", bottom, "cm...\n")
       df <- get_SDA_property(
         property = query_prop,
@@ -133,32 +197,41 @@ fetch_SGO <- function(aoi,
         bottom_depth = bottom,
         include_minors = FALSE
       )[, c("mukey", query_prop)]
-      
+
       lyr <- terra::classify(mu_raster, df, others = NA)
       nm <- paste0(out_prop, "_", top, "_", bottom)
       names(lyr) <- nm
-      
+
       # Convert OM to SOC
       if (tosoc && prop == "om_r") {
         lyr <- lyr / 1.724
         names(lyr) <- nm
         message("Converted 'om_r' to 'oc_r' using Van Bemmelen factor (1.724).")
       }
-      
+
       # Export if enabled
       if (export && !is.null(output_dir)) {
         suffix_str <- ifelse(nzchar(suffix), paste0("_", suffix), "")
-        out_file <- file.path(output_dir, paste0("SGO_", nm, suffix_str, ".tif"))
+        out_file <- file.path(
+          output_dir,
+          paste0("SGO_", nm, suffix_str, ".tif")
+        )
         terra::writeRaster(lyr, out_file, overwrite = TRUE)
         file_paths[nm] <- out_file
       }
-      
+
       raster_stack[[nm]] <- lyr
     }
   }
-  
+
   final_stack <- terra::rast(raster_stack)
   attr(final_stack, "product") <- "SGO"
-  
+
+  # Reproject to user-specified CRS
+  if (!is.null(crs)) {
+    target_crs <- terra::crs(crs, proj = TRUE)
+    final_stack <- terra::project(final_stack, target_crs, method = "bilinear")
+  }
+
   return(list(stack = final_stack, file_paths = file_paths, product = "SGO"))
 }
