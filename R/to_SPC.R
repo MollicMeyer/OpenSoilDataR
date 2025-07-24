@@ -90,7 +90,7 @@ to_spc <- function(
 
   if (mode == "points") {
     stopifnot(!is.null(locations))
-    if (inherits(locations, "sf")) {
+    if (!inherits(locations, "SpatVector")) {
       locations <- terra::vect(locations)
     }
     values <- terra::extract(rstack, locations)
