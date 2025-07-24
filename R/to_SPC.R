@@ -115,8 +115,8 @@ to_spc <- function(
     stopifnot(!is.null(locations))
     # Already a SpatVector at this point
     crs_rstack <- crs(rstack)
-    if (!compareGeom(rstack, locations, stopOnError = FALSE)) {
-      locations <- project(locations, crs_rstack)
+    if (!terra::same.crs(rstack, locations)) {
+      locations <- terra::project(locations, crs(rstack))
     }
 
     stat_list <- lapply(stat, function(s) {
