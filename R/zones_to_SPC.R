@@ -1,22 +1,23 @@
 #' Convert zonal raster statistics into a SoilProfileCollection
 #'
-#' Takes a raster stack of soil properties and zonal vector features,
-#' computes summary statistics per zone, parses depth intervals, and
-#' returns a `SoilProfileCollection` with horizon-level data.
+#' This function extracts zonal statistics from a raster stack using polygons (zones),
+#' reshapes the data into horizon format, and converts it into an `aqp::SoilProfileCollection`.
 #'
-#' @param rstack A `SpatRaster` with soil property layers named using depth suffixes (e.g. `_0_5`, `_5_15`).
-#' @param zones An `sf` or `SpatVector` object representing zones/polygons for which zonal stats are calculated.
-#' @param stat Summary function to use in `terra::extract()` (e.g., `"mean"`, `"median"`).
-#' @param id_column Column name in `zones` used to assign unique profile IDs.
+#' @param rstack A `SpatRaster` containing stacked soil property rasters.
+#' @param zones A `SpatVector` or `sf` object of polygons used for zonal summaries.
+#' @param stat A summary statistic to apply per zone (e.g., "mean", "median"). Default: "mean".
+#' @param id_column Character. Name of the column in `zones` to use as profile IDs.
 #'
-#' @return A `SoilProfileCollection` object with horizon-level attributes for each zone.
-#' @import terra
-#' @importFrom dplyr select rename filter
-#' @importFrom tidyr pivot_longer pivot_wider
-#' @importFrom stringr str_detect str_remove
-#' @importFrom aqp depths site
+#' @return A `SoilProfileCollection` with horizon data extracted from the raster stack.
 #' @export
-zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "ID") {
+zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
+  library(terra)
+  library(dplyr)
+  library(tidyr)
+  library(stringr)
+  library(aqp)
+
+  # Lookup tables
   depth_interval_lookup <- list(
     "0_5" = c("0_5", "0-5cm", "0_cm", "0-5"),
     "5_15" = c("5_15", "5-15cm", "5_cm", "0-25"),
@@ -35,23 +36,26 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "ID") {
     "100_200" = c(100, 200)
   )
 
-  if (!inherits(zones, "SpatVector")) {
-    zones <- terra::vect(zones)
-  }
-
+  # Reproject zones if needed
   if (!terra::same.crs(rstack, zones)) {
-    zones <- terra::project(zones, terra::crs(rstack))
+    zones <- sf::st_transform(zones, terra::crs(rstack))
   }
 
-  zstats <- terra::extract(rstack, zones, fun = stat, na.rm = TRUE)
+  zones_vect <- terra::vect(zones)
+  zstats <- terra::extract(rstack, zones_vect, fun = stat, na.rm = TRUE)
 
+  # Add ID from zones to extracted
   zstats[[id_column]] <- zones[[id_column]]
+
+  # Rename ID column to peiid
   df <- zstats %>% dplyr::rename(peiid = !!sym(id_column))
 
-  if ("ID" %in% colnames(df)) {
-    colnames(df)[colnames(df) == "ID"] <- "peiid"
+  # Ensure ID column doesn't conflict
+  if ("ID" %in% names(df)) {
+    df <- df %>% dplyr::select(-ID)
   }
 
+  # Pivot longer to depth layers
   long_df <- df %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     mutate(
@@ -110,7 +114,11 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "ID") {
     pivot_wider(names_from = variable, values_from = value)
 
   depths(hz_data) <- peiid ~ hzdept + hzdepb
-  site(hz_data) <- df[, "peiid", drop = FALSE]
+
+  # Add site metadata from original zones
+  site_meta <- as.data.frame(zones)[, id_column, drop = FALSE]
+  colnames(site_meta)[1] <- "peiid"
+  site(hz_data) <- left_join(site(hz_data), site_meta, by = "peiid")
 
   return(hz_data)
 }
