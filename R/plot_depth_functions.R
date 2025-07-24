@@ -48,13 +48,15 @@ plot_depth_functions <- function(
   }
 
   # Compute slabbed summary
-  slab_df <- slab(
-    combined_spc,
-    fm = source ~ .,
-    slab.structure = slab_structure,
-    slab.fun = mean.and.sd,
-    variables = variables
-  )
+  slab_list <- lapply(variables, function(var) {
+    slab(
+      combined_spc,
+      fm = reformulate("source", response = var),
+      slab.structure = slab_structure,
+      slab.fun = mean.and.sd
+    )
+  })
+  slab_df <- bind_rows(slab_list)
 
   # Okabe-Ito colorblind-friendly palette (max 8 groups)
   okabe_ito <- c(
