@@ -123,7 +123,7 @@ to_spc <- function(
       terra::zonal(rstack, locations, fun = s)
     })
     df <- Reduce(function(x, y) full_join(x, y, by = id_column), stat_list)
-    df$peiid <- locations[[id_column]]
+    df$peiid <- df[[id_column]]
     hz <- parse_layers(df, idcol = "peiid")
     depths(hz) <- peiid ~ hzdept + hzdepb
     site(hz) <- locations |>
