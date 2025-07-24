@@ -294,7 +294,7 @@ plot_depth_functions <- function(
     "krfact" = c(PSP = NA, SG2 = NA, SOL = NA, CSRL = NA, SGO = "krfact")
   )
 
-  # Rename variable names in each SPC based on lookup
+  # Rename variables in horizons
   for (i in seq_along(spc_list)) {
     src <- source_labels[i]
     spc <- spc_list[[i]]
@@ -303,7 +303,7 @@ plot_depth_functions <- function(
       actual_name <- property_lookup[[v]][[src]]
       if (!is.na(actual_name)) {
         if (actual_name %in% horizonNames(spc)) {
-          names(horizons(spc))[names(horizons(spc)) == actual_name] <- v
+          horizons(spc)[[v]] <- horizons(spc)[[actual_name]]
         } else {
           stop(sprintf(
             "Variable '%s' (mapped as '%s') not found in horizons of SPC for source '%s'",
@@ -342,7 +342,7 @@ plot_depth_functions <- function(
   slab_list <- lapply(variables, function(var) {
     slab(
       combined_spc,
-      fm = reformulate("source", response = var),
+      fm = stats::as.formula(paste(var, "~ source")),
       slab.structure = slab_structure,
       slab.fun = mean.and.sd
     )
