@@ -23,7 +23,13 @@ plot_depth_functions <- function(
 
   # Assign source label to each SPC
   for (i in seq_along(spc_list)) {
-    site(spc_list[[i]])$source <- source_labels[i]
+    source_name <- source_vector[i]
+    profile_id(spc_list[[i]]) <- paste0(
+      source_name,
+      "_",
+      profile_id(spc_list[[i]])
+    )
+    spc_list[[i]]$source <- source_name
   }
 
   # Combine SPCs using aqp::combine
