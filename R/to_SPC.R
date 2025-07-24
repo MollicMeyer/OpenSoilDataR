@@ -48,9 +48,13 @@ to_spc <- function(
       ) %>%
       separate(
         layer,
-        into = c("variable", "depth_label"),
+        into = c("property", "mid", "top", "bottom"),
         sep = "_",
         remove = FALSE
+      ) %>%
+      mutate(
+        depth_label = paste0(top, "_", bottom),
+        variable = paste(property, mid, sep = "_")
       ) %>%
       rowwise() %>%
       mutate(
