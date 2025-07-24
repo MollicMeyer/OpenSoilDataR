@@ -230,7 +230,7 @@ fetch_SGO <- function(
   # Reproject to user-specified CRS
   if (!is.null(crs)) {
     target_crs <- terra::crs(crs, proj = TRUE)
-    final_stack <- terra::project(final_stack, target_crs, method = "bilinear")
+    final_stack <- terra::project(final_stack, target_crs, method = "near")
   }
 
   return(list(stack = final_stack, file_paths = file_paths, product = "SGO"))
