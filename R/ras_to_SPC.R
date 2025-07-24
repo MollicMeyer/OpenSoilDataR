@@ -1,11 +1,7 @@
-#' Convert Raster Stack to SoilProfileCollection
+#' Convert RasterStack to SoilProfileCollection
 #'
-#' Converts a horizon-layered `SpatRaster` into a `SoilProfileCollection` (SPC).
-#' Assumes layer names follow the format: `property_TOP_BOTTOM` (e.g., `claytotal_0_5`)
-#'
-#' @param rstack A `SpatRaster` with depth-layered soil properties.
-#'
-#' @return A `SoilProfileCollection` object with spatial site metadata.
+#' @param rstack A `SpatRaster` with layer names indicating depth intervals (e.g., "claytotal_r_0_5")
+#' @return A `SoilProfileCollection` object
 #' @export
 ras_to_SPC <- function(rstack) {
   require(terra)
@@ -14,12 +10,13 @@ ras_to_SPC <- function(rstack) {
   require(aqp)
   require(stringr)
 
+  # Lookup tables
   depth_interval_lookup <- list(
     "0_5" = c("0_5", "0-5cm", "0_cm", "0-5"),
     "5_15" = c("5_15", "5-15cm", "5_cm", "0-25"),
-    "15_30" = c("15_30", "15-30cm", "15_cm", "25-50"),
-    "30_60" = c("30_60", "30-60cm", "30_cm", "25-50"),
-    "60_100" = c("60_100", "60-100cm", "60_cm"),
+    "15_30" = c("15_30", "15-30cm", "15_cm", "0-25", "25-50"),
+    "30_60" = c("30_60", "30-60cm", "30_cm", "30-60", "25-50"),
+    "60_100" = c("60_100", "60-100cm", "60_cm", "30-60"),
     "100_200" = c("100_200", "100-200cm", "100_cm", "150_cm")
   )
 
@@ -32,6 +29,7 @@ ras_to_SPC <- function(rstack) {
     "100_200" = c(100, 200)
   )
 
+  # Extract raster to data.frame
   df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
   df$peiid <- paste0("cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
@@ -39,20 +37,13 @@ ras_to_SPC <- function(rstack) {
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
-    separate(
-      layer,
-      into = c("property", "top", "bottom"),
-      sep = "_",
-      remove = FALSE
-    ) %>%
-    mutate(depth_label = paste0(top, "_", bottom)) %>%
     rowwise() %>%
     mutate(
       matched_label = {
-        matches <- sapply(depth_interval_lookup, function(p) {
+        matches <- sapply(depth_interval_lookup, function(pats) {
           any(str_detect(
-            depth_label,
-            paste0("^(", paste(p, collapse = "|"), ")$")
+            layer,
+            paste0("_(", paste(pats, collapse = "|"), ")$")
           ))
         })
         if (any(matches)) {
@@ -70,15 +61,30 @@ ras_to_SPC <- function(rstack) {
         depth_range_lookup[[matched_label]][2]
       } else {
         NA_real_
+      },
+      variable = if (!is.na(matched_label)) {
+        str_remove(
+          layer,
+          paste0(
+            "_(",
+            paste(depth_interval_lookup[[matched_label]], collapse = "|"),
+            ")$"
+          )
+        )
+      } else {
+        NA_character_
       }
     ) %>%
     ungroup()
 
-  hz <- long_df %>%
-    select(peiid, hzdept, hzdepb, property, value) %>%
-    pivot_wider(names_from = property, values_from = value)
+  # Pivot into horizon format
+  hz_data <- long_df %>%
+    select(peiid, hzdept, hzdepb, variable, value) %>%
+    pivot_wider(names_from = variable, values_from = value)
 
-  depths(hz) <- peiid ~ hzdept + hzdepb
-  site(hz) <- site_data
-  return(hz)
+  # Construct SPC
+  depths(hz_data) <- peiid ~ hzdept + hzdepb
+  site(hz_data) <- site_data
+
+  return(hz_data)
 }
