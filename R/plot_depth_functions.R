@@ -29,7 +29,7 @@ plot_depth_functions <- function(
       "_",
       profile_id(spc_list[[i]])
     )
-    spc_list[[i]]$source <- source_name
+    site(spc_list[[i]])$source <- source_name
   }
 
   # Combine SPCs using aqp::combine
