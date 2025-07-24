@@ -32,7 +32,7 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     "100_200" = c(100, 200)
   )
 
-  parse_layers <- function(df, idcol = "peiid") {
+  parse_layers <- function(df, idcol) {
     long_df <- df %>%
       pivot_longer(
         cols = -all_of(idcol),
@@ -77,11 +77,9 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
 
   stat_list <- lapply(stat, function(s) terra::zonal(rstack, zones, fun = s))
   df <- Reduce(function(x, y) full_join(x, y, by = id_column), stat_list)
-  df$peiid <- df[[id_column]]
-
-  hz <- parse_layers(df, idcol = "peiid")
-  depths(hz) <- peiid ~ hzdept + hzdepb
-  site(hz) <- df %>% select(peiid)
+  hz <- parse_layers(df, idcol = id_column)
+  depths(hz) <- reformulate("hzdept + hzdepb", response = id_column)
+  site(hz) <- df %>% select(all_of(id_column))
 
   return(hz)
 }
