@@ -90,7 +90,9 @@ to_spc <- function(
 
   if (mode == "points") {
     stopifnot(!is.null(locations))
-    locations <- vect(locations)
+    if (inherits(locations, "sf")) {
+      locations <- terra::vect(locations)
+    }
     values <- terra::extract(rstack, locations)
     values[[id_column]] <- locations[[id_column]]
     names(values)[1] <- "peiid"
@@ -103,7 +105,9 @@ to_spc <- function(
   if (mode == "zonal") {
     stopifnot(!is.null(locations))
     # Subset only polygons with an ID present
-    locations <- vect(locations)
+    if (inherits(locations, "sf")) {
+      locations <- terra::vect(locations)
+    }
     if (!id_column %in% names(locations)) {
       stop("ID column not found in 'locations'.")
     }
