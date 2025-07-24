@@ -2,7 +2,7 @@
 #'
 #' @param rstack A `SpatRaster` (or list of) from `fetch_*()` functions
 #' @param mode One of "raster", "points", "zonal"
-#' @param locations Optional `sf` or `SpatVector` for points or polygons
+#' @param locations Optional `sf` or `SpatVector` object containing points or polygons. Must include a unique identifier column (e.g., "Name").
 #' @param stat For "zonal" mode, one or more of "mean", "min", "max", "median"
 #' @param id_column ID column in `locations` (default: "Name")
 #' @return A `SoilProfileCollection` object
@@ -105,7 +105,7 @@ to_spc <- function(
   if (mode == "zonal") {
     stopifnot(!is.null(locations))
     # Subset only polygons with an ID present
-    if (inherits(locations, "sf")) {
+    if (!inherits(locations, "SpatVector")) {
       locations <- terra::vect(locations)
     }
     if (!id_column %in% names(locations)) {
@@ -113,7 +113,7 @@ to_spc <- function(
     }
     locations <- locations[!is.na(locations[[id_column]]), ]
     stopifnot(!is.null(locations))
-    locations <- vect(locations)
+    # Already a SpatVector at this point
     crs_rstack <- crs(rstack)
     if (!compareGeom(rstack, locations, stopOnError = FALSE)) {
       locations <- project(locations, crs_rstack)
