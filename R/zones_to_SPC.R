@@ -1,23 +1,22 @@
-#' Convert zonal summaries of raster soil data into a SoilProfileCollection
+#' Convert zonal raster statistics into a SoilProfileCollection
 #'
-#' @param rstack A `SpatRaster` of soil property layers
-#' @param zones A polygon `SpatVector` or `sf` object
-#' @param stat One or more zonal statistics to compute, e.g. `"mean"`, `"max"`
-#' @param id_column Unique identifier column in `zones`
+#' Takes a raster stack of soil properties and zonal vector features,
+#' computes summary statistics per zone, parses depth intervals, and
+#' returns a `SoilProfileCollection` with horizon-level data.
 #'
-#' @return A `SoilProfileCollection` object with horizons populated from zonal summaries
+#' @param rstack A `SpatRaster` with soil property layers named using depth suffixes (e.g. `_0_5`, `_5_15`).
+#' @param zones An `sf` or `SpatVector` object representing zones/polygons for which zonal stats are calculated.
+#' @param stat Summary function to use in `terra::extract()` (e.g., `"mean"`, `"median"`).
+#' @param id_column Column name in `zones` used to assign unique profile IDs.
+#'
+#' @return A `SoilProfileCollection` object with horizon-level attributes for each zone.
+#' @import terra
+#' @importFrom dplyr select rename filter
+#' @importFrom tidyr pivot_longer pivot_wider
+#' @importFrom stringr str_detect str_remove
+#' @importFrom aqp depths site
 #' @export
-zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
-  stopifnot(
-    requireNamespace("terra"),
-    requireNamespace("dplyr"),
-    requireNamespace("tidyr"),
-    requireNamespace("stringr"),
-    requireNamespace("purrr"),
-    requireNamespace("aqp")
-  )
-
-  # Lookup tables (user-supplied)
+zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "ID") {
   depth_interval_lookup <- list(
     "0_5" = c("0_5", "0-5cm", "0_cm", "0-5"),
     "5_15" = c("5_15", "5-15cm", "5_cm", "0-25"),
@@ -36,59 +35,82 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     "100_200" = c(100, 200)
   )
 
-  # Reproject zones if needed
-  if (inherits(zones, "sf")) {
+  if (!inherits(zones, "SpatVector")) {
     zones <- terra::vect(zones)
   }
+
   if (!terra::same.crs(rstack, zones)) {
     zones <- terra::project(zones, terra::crs(rstack))
   }
 
-  # Zonal summary
-  stat_list <- lapply(stat, function(s) terra::zonal(rstack, zones, fun = s))
-  df <- Reduce(function(x, y) dplyr::full_join(x, y, by = id_column), stat_list)
+  zstats <- terra::extract(rstack, zones, fun = stat, na.rm = TRUE)
 
-  # Add unique ID
-  df$peiid <- df[[id_column]]
+  zstats[[id_column]] <- zones[[id_column]]
+  df <- zstats %>% dplyr::rename(peiid = !!sym(id_column))
 
-  # Convert wide → long
+  if ("ID" %in% colnames(df)) {
+    colnames(df)[colnames(df) == "ID"] <- "peiid"
+  }
+
   long_df <- df %>%
-    dplyr::select(-any_of(id_column)) %>%
-    tidyr::pivot_longer(
-      cols = -peiid,
-      names_to = "layer",
-      values_to = "value"
-    ) %>%
-    dplyr::mutate(
-      # extract depth label using regex
-      depth_label = stringr::str_extract(
-        layer,
-        "[0-9]+[_-][0-9]+(cm)?|[0-9]+_cm|[0-9]+-[0-9]+"
-      ),
-      # match against lookup
-      matched_interval = purrr::map_chr(depth_label, function(lbl) {
-        hit <- purrr::keep(
-          depth_interval_lookup,
-          ~ any(stringr::str_detect(
-            lbl,
-            paste0("^(", paste(.x, collapse = "|"), ")$")
-          ))
-        )
-        if (length(hit) > 0) names(hit)[1] else NA
+    pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
+    mutate(
+      matched_label = sapply(layer, function(lab) {
+        match <- NA_character_
+        for (label in names(depth_interval_lookup)) {
+          if (
+            any(str_detect(
+              lab,
+              paste0(
+                "(",
+                paste(depth_interval_lookup[[label]], collapse = "|"),
+                ")$"
+              )
+            ))
+          ) {
+            match <- label
+            break
+          }
+        }
+        match
       }),
-      hzdept = purrr::map_dbl(matched_interval, ~ depth_range_lookup[[.x]][1]),
-      hzdepb = purrr::map_dbl(matched_interval, ~ depth_range_lookup[[.x]][2]),
-      property = stringr::str_remove(layer, "_[0-9]+.*$") # strip depth suffix
+      hzdept = ifelse(
+        !is.na(matched_label),
+        sapply(matched_label, function(m) depth_range_lookup[[m]][1]),
+        NA_real_
+      ),
+      hzdepb = ifelse(
+        !is.na(matched_label),
+        sapply(matched_label, function(m) depth_range_lookup[[m]][2]),
+        NA_real_
+      ),
+      variable = ifelse(
+        !is.na(matched_label),
+        mapply(
+          function(lab, label) {
+            str_remove(
+              lab,
+              paste0(
+                "_(",
+                paste(depth_interval_lookup[[label]], collapse = "|"),
+                ")$"
+              )
+            )
+          },
+          layer,
+          matched_label
+        ),
+        NA_character_
+      )
     ) %>%
-    dplyr::filter(!is.na(hzdept) & !is.na(property))
+    filter(!is.na(matched_label) & !is.na(variable))
 
-  horizon_data <- long_df %>%
-    dplyr::select(peiid, hzdept, hzdepb, property, value) %>%
-    tidyr::pivot_wider(names_from = property, values_from = value)
+  hz_data <- long_df %>%
+    select(peiid, hzdept, hzdepb, variable, value) %>%
+    pivot_wider(names_from = variable, values_from = value)
 
-  # Construct SoilProfileCollection
-  depths(horizon_data) <- peiid ~ hzdept + hzdepb
-  site(horizon_data) <- df %>% dplyr::select(peiid)
+  depths(hz_data) <- peiid ~ hzdept + hzdepb
+  site(hz_data) <- df[, "peiid", drop = FALSE]
 
-  return(horizon_data)
+  return(hz_data)
 }
