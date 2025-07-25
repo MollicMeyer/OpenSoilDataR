@@ -63,14 +63,7 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_real_
       },
       variable = if (!is.na(matched_label)) {
-        str_remove(
-          layer,
-          paste0(
-            "(_)?(",
-            paste(depth_interval_lookup[[matched_label]], collapse = "|"),
-            ")(_.+)?$"
-          )
-        )
+        str_remove(layer, "_\\d+_cm(_(p|r|l|h|rpi))?$")
       }
     ) %>%
     ungroup()
