@@ -111,83 +111,83 @@ lookup_scalar <- function(property, depth, measure) {
         1,
         1,
         1,
-        1, # anylithicdpt
+        0.001, # anylithicdpt
+        1,
+        1,
+        1,
+        0.01, # caco3
         0.1,
         0.1,
         0.1,
-        0.1, # caco3
+        0.01, # cec7
         1,
         1,
         1,
-        1, # cec7
-        1,
-        1,
-        1,
-        1, # claytotal
+        0.01, # claytotal
         0.01,
         0.01,
         0.01,
         0.01, # dbovendry
-        1,
-        1,
-        1,
-        1, # ec
-        1,
-        1,
-        1,
-        1, # ecec
-        1,
-        1,
-        1,
-        1, # fragvol
         0.1,
         0.1,
         0.1,
-        0.1, # gypsum
+        0.01, # ec
         0.1,
         0.1,
         0.1,
-        0.1, # ph1to1h2o
+        0.01, # ecec
         1,
         1,
         1,
-        1, # resdept
-        1,
-        1,
-        1,
-        1, # sandco
-        1,
-        1,
-        1,
-        1, # sandfine
-        1,
-        1,
-        1,
-        1, # sandmed
-        1,
-        1,
-        1,
-        1, # sandtotal
-        1,
-        1,
-        1,
-        1, # sandvc
-        1,
-        1,
-        1,
-        1, # sandvf
-        1,
-        1,
-        1,
-        1, # sar
-        1,
-        1,
-        1,
-        1, # silttotal
+        0.01, # fragvol
         0.1,
         0.1,
         0.1,
-        0.1
+        0.01, # gypsum
+        0.01,
+        0.01,
+        0.01,
+        0.01, # ph1to1h2o
+        1,
+        1,
+        1,
+        0.01, # resdept
+        1,
+        1,
+        1,
+        0.01, # sandco
+        1,
+        1,
+        1,
+        0.01, # sandfine
+        1,
+        1,
+        1,
+        0.01, # sandmed
+        1,
+        1,
+        1,
+        0.01, # sandtotal
+        1,
+        1,
+        1,
+        0.01, # sandvc
+        1,
+        1,
+        1,
+        0.01, # sandvf
+        1,
+        1,
+        1,
+        0.01, # sar
+        1,
+        1,
+        1,
+        0.1, # silttotal
+        0.001,
+        0.001,
+        0.001,
+        0.01
       ) # soc
     ),
     class = "data.frame"
