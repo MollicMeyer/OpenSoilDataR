@@ -59,7 +59,8 @@ fetch_SOL <- function(
   if (lookup_path == "") {
     stop("Could not find scalar_lookup.csv in inst/extdata/")
   }
-  scalar_table <- read.csv(lookup_path)
+  scalar_table <- read.csv(lookup_path, stringsAsFactors = FALSE)
+  scalar_table$scalar <- as.numeric(scalar_table$scalar)
 
   # Available SOLUS soil properties
   valid_properties <- c(
