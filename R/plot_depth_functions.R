@@ -354,6 +354,9 @@ plot_depth_functions <- function(
   group_levels <- unique(slab_df$source)
   palette_colors <- okabe_ito[seq_len(length(group_levels))]
 
+  # Force slab bottom to 0 when top == 0 for surface visibility
+  slab_df$bottom[slab_df$top == 0] <- 0
+
   # Final plot using source directly
   xyplot(
     bottom ~ mean | variable,
