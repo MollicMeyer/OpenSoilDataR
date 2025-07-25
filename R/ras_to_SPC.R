@@ -60,8 +60,41 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_real_
       },
 
-      # ✅ Clean base variable name robustly
-      variable = str_remove(layer, "_(\\d+(_|-)\\d+|\\d+)(cm)?(_[a-z]+)?$")
+      variable = case_when(
+        str_detect(
+          layer,
+          paste0(
+            "_\\d+_cm_(",
+            paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
+            ")$"
+          )
+        ) ~
+          str_remove(
+            layer,
+            paste0(
+              "_\\d+_cm_(",
+              paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
+              ")$"
+            )
+          ),
+        str_detect(
+          layer,
+          paste0(
+            "_(\\d+(-|_)\\d+|\\d+)(cm)?(_(",
+            paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
+            "))?$"
+          )
+        ) ~
+          str_remove(
+            layer,
+            paste0(
+              "_(\\d+(-|_)\\d+|\\d+)(cm)?(_(",
+              paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
+              "))?$"
+            )
+          ),
+        TRUE ~ layer
+      )
     ) %>%
     ungroup()
 
