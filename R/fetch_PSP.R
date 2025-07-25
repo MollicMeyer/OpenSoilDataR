@@ -85,13 +85,18 @@
 #' plot(psp_data$stack)
 #' }
 
-
-
-fetch_PSP <- function(aoi, properties, depths, output_dir,
-                      suffix = "", crs = "EPSG:4326", scale = 30,
-                      export = TRUE, tosoc = FALSE, convertOM = FALSE) {
-
-
+fetch_PSP <- function(
+  aoi,
+  properties,
+  depths,
+  output_dir = NULL,
+  suffix = "",
+  crs = "EPSG:4326",
+  scale = 30,
+  export = TRUE,
+  tosoc = FALSE,
+  convertOM = FALSE
+) {
   # Load AOI as SpatVector if it's a shapefile
   if (is.character(aoi) && grepl("\\.shp$", aoi)) {
     aoi <- vect(aoi)
@@ -121,19 +126,34 @@ fetch_PSP <- function(aoi, properties, depths, output_dir,
   # Define available depth intervals and soil properties
   depth_intervals <- c("0_5", "5_15", "15_30", "30_60", "60_100", "100_200")
   polaris_properties <- c(
-    "bd_mean", "clay_mean", "ksat_mean", "n_mean", "om_mean", "ph_mean",
-    "sand_mean", "silt_mean", "theta_r_mean", "theta_s_mean", "lambda_mean",
-    "hb_mean", "alpha_mean"
+    "bd_mean",
+    "clay_mean",
+    "ksat_mean",
+    "n_mean",
+    "om_mean",
+    "ph_mean",
+    "sand_mean",
+    "silt_mean",
+    "theta_r_mean",
+    "theta_s_mean",
+    "lambda_mean",
+    "hb_mean",
+    "alpha_mean"
   )
 
   # Validate input properties and depths
   invalid_properties <- setdiff(properties, polaris_properties)
   if (length(invalid_properties) > 0) {
-    stop(paste("Invalid property selected:", paste(invalid_properties, collapse = ", ")))
+    stop(paste(
+      "Invalid property selected:",
+      paste(invalid_properties, collapse = ", ")
+    ))
   }
 
   selected_depths <- intersect(depths, depth_intervals)
-  if (length(selected_depths) == 0) stop("Invalid depth(s) selected.")
+  if (length(selected_depths) == 0) {
+    stop("Invalid depth(s) selected.")
+  }
 
   raster_list <- list()
   file_paths <- list()
@@ -161,19 +181,29 @@ fetch_PSP <- function(aoi, properties, depths, output_dir,
 
       # Define output file name
       output_file <- if (!is.null(output_dir) && export) {
-        file.path(output_dir, paste0("PSP_", final_prop_name, "_", depth, suffix, ".tif"))
+        file.path(
+          output_dir,
+          paste0("PSP_", final_prop_name, "_", depth, suffix, ".tif")
+        )
       } else {
         tempfile(fileext = ".tif")
       }
 
       # Download raster
       gd_download(
-        img, filename = output_file, region = bbox_gee,
-        scale = scale, crs = crs, resampling = "near",
-        overwrite = TRUE, silent = FALSE
+        img,
+        filename = output_file,
+        region = bbox_gee,
+        scale = scale,
+        crs = crs,
+        resampling = "near",
+        overwrite = TRUE,
+        silent = FALSE
       )
 
-      if (export) file_paths <- append(file_paths, output_file)
+      if (export) {
+        file_paths <- append(file_paths, output_file)
+      }
 
       # Load raster and remove extra bands
       full_raster <- rast(output_file)
@@ -188,7 +218,9 @@ fetch_PSP <- function(aoi, properties, depths, output_dir,
       # Convert OM to SOC if selected
       if (prop == "om_mean" && tosoc) {
         clean_raster <- clean_raster / 1.724
-        message("Converted Organic Matter to Soil Organic Carbon using Van Bemmelen factor (1.724).")
+        message(
+          "Converted Organic Matter to Soil Organic Carbon using Van Bemmelen factor (1.724)."
+        )
       }
 
       # Assign correct band name
@@ -229,5 +261,4 @@ fetch_PSP <- function(aoi, properties, depths, output_dir,
 
   # Return structured output
   return(list(stack = raster_stack, file_paths = file_paths, product = "PSP"))
-
 }
