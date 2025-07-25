@@ -598,7 +598,7 @@ s.zonalstats <- function(
 
           for (stat in stats) {
             zonal_fun <- match.fun(stat)
-            zonal_stats <- terra::zonal(raster_layer, poly, zonal_fun)
+            zonal_stats <- terra::zonal(weighted_raster, poly, zonal_fun)
 
             # Store weighted mean statistics separately
             weighted_mean_df <- rbind(
@@ -612,7 +612,6 @@ s.zonalstats <- function(
                 ZonalStats = round(zonal_stats[[1]], 2)
               )
             )
-
             # ✅ Plot raster if enabled
             if (MakePlot) {
               options(terra.pal = NULL)
