@@ -66,18 +66,11 @@ ras_to_SPC <- function(rstack, source = "R") {
         str_remove(
           layer,
           paste0(
-            "(",
+            "(_)?(",
             paste(depth_interval_lookup[[matched_label]], collapse = "|"),
-            ")"
+            ")(_.+)?$"
           )
-        ) %>%
-          str_remove("_cm") %>% # clean remaining "_cm" if present
-          str_remove("_p$") %>% # clean trailing "_p"
-          str_remove("_mean$") %>% # clean trailing "_mean"
-          str_remove("_r$") %>%
-          str_remove("_l$") %>%
-          str_remove("_h$") %>%
-          str_remove("_rpi$")
+        )
       }
     ) %>%
     ungroup()
