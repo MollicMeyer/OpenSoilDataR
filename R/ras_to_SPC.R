@@ -43,7 +43,7 @@ ras_to_SPC <- function(rstack) {
         matches <- sapply(depth_interval_lookup, function(pats) {
           any(str_detect(
             layer,
-            paste0("_(", paste(pats, collapse = "|"), ")$")
+            paste0("(", paste(pats, collapse = "|"), ")")
           ))
         })
         if (any(matches)) {
