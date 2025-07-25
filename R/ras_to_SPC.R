@@ -59,12 +59,11 @@ ras_to_SPC <- function(rstack, source = "R") {
       } else {
         NA_real_
       },
-      variable = if (!is.na(matched_label)) {
-        sub(paste0("_", matched_label, ".*$"), "", layer)
-      } else {
-        NA_character_
-      }
-    )
+
+      # ✅ Clean base variable name robustly
+      variable = str_remove(layer, "_(\\d+(_|-)\\d+|\\d+)(cm)?(_[a-z]+)?$")
+    ) %>%
+    ungroup()
 
   # Pivot into horizon format
   hz_data <- long_df %>%
