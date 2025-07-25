@@ -1,3 +1,15 @@
+#' Lookup scalar conversion factor for SOLUS properties
+#'
+#' @param property Character. Soil property name (e.g., "soc").
+#' @param depth Character. Depth string (e.g., "30_cm").
+#' @param measure Character. Measure ("p", "l", "h", or "rpi").
+#'
+#' @return Numeric scalar factor.
+#' @export
+lookup_scalar <- function(property, depth, measure) {
+  ...
+}
+
 lookup_scalar <- function(property, depth, measure) {
   filetype <- switch(
     measure,
