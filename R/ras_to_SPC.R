@@ -39,9 +39,10 @@ ras_to_SPC <- function(rstack, source = "R") {
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     rowwise() %>%
     mutate(
+      # Match depth interval label based on known patterns
       matched_label = {
         matches <- sapply(depth_interval_lookup, function(pats) {
-          any(str_detect(
+          any(stringr::str_detect(
             layer,
             paste0("(", paste(pats, collapse = "|"), ")")
           ))
@@ -52,6 +53,8 @@ ras_to_SPC <- function(rstack, source = "R") {
           NA_character_
         }
       },
+
+      # Assign top and bottom depth from the lookup table
       hzdept = if (!is.na(matched_label)) {
         depth_range_lookup[[matched_label]][1]
       } else {
@@ -62,11 +65,15 @@ ras_to_SPC <- function(rstack, source = "R") {
       } else {
         NA_real_
       },
+
+      # Extract base variable name by stripping off the depth and suffix
       variable = if (!is.na(matched_label)) {
         str_remove(
           layer,
-          "(_|-)(mean|p|r|l|h|rpi)?(\\d+[_-]\\d+|\\d+)(cm)?(_mean|_p|_r|_l|_h|_rpi)?$"
+          "_\\d+(_|-)?(cm)?(_(p|r|l|h|rpi|mean))?$"
         )
+      } else {
+        NA_character_
       }
     ) %>%
     ungroup()
