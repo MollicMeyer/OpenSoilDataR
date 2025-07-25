@@ -10,14 +10,14 @@
 #' @param output_dir Character. Directory where files will be saved. Set to NULL to keep in memory.
 #' @param suffix Character. Optional suffix for filenames.
 #' @param export Logical. If TRUE, saves downloaded rasters to `output_dir`.
-#' 
+#'
 #' @return A list with the following elements:
 #' \describe{
 #'   \item{\code{stack}}{A `SpatRaster` containing all downloaded layers.}
 #'   \item{\code{file_paths}}{A character vector of file paths (if `export = TRUE`).}
 #'   \item{\code{product}}{A character string `"SOL"` identifying the dataset.}
 #' }
-#' 
+#'
 #' @import terra httr utils
 #' @export
 #' @examples
@@ -39,32 +39,67 @@
 #' plot(sol_data$stack)
 #' }
 
-fetch_SOL <- function(aoi, properties, depths, measures,
-                      output_dir = NULL, suffix = "", export = TRUE) {
-
-
-
+fetch_SOL <- function(
+  aoi,
+  properties,
+  depths,
+  measures,
+  output_dir = NULL,
+  suffix = "",
+  export = TRUE
+) {
   base_url <- "https://storage.googleapis.com/solus100pub/"
 
   # Available SOLUS soil properties
   valid_properties <- c(
-    "anylithicdpt", "caco3", "cec7", "claytotal", "dbovendry", "ec", "ecec", "fragvol",
-    "gypsum", "ph1to1h2o", "resdept", "sandco", "sandfine", "sandmed", "sandtotal",
-    "sandvc", "sandvf", "sar", "silttotal", "soc"
+    "anylithicdpt",
+    "caco3",
+    "cec7",
+    "claytotal",
+    "dbovendry",
+    "ec",
+    "ecec",
+    "fragvol",
+    "gypsum",
+    "ph1to1h2o",
+    "resdept",
+    "sandco",
+    "sandfine",
+    "sandmed",
+    "sandtotal",
+    "sandvc",
+    "sandvf",
+    "sar",
+    "silttotal",
+    "soc"
   )
 
   # Available depth intervals
-  valid_depths <- c("0_cm", "5_cm", "15_cm", "30_cm", "60_cm", "100_cm", "150_cm")
+  valid_depths <- c(
+    "0_cm",
+    "5_cm",
+    "15_cm",
+    "30_cm",
+    "60_cm",
+    "100_cm",
+    "150_cm"
+  )
   valid_measures <- c("l", "h", "p", "rpi")
 
   # Validate input parameters
-  if (!all(properties %in% valid_properties)) stop("Invalid property selected.")
-  if (!all(depths %in% valid_depths)) stop("Invalid depth selected.")
-  if (!all(measures %in% valid_measures)) stop("Invalid measure selected.")
+  if (!all(properties %in% valid_properties)) {
+    stop("Invalid property selected.")
+  }
+  if (!all(depths %in% valid_depths)) {
+    stop("Invalid depth selected.")
+  }
+  if (!all(measures %in% valid_measures)) {
+    stop("Invalid measure selected.")
+  }
 
   # Convert AOI if needed
   if (is.character(aoi) && grepl("\\.shp$", aoi)) {
-    aoi <- vect(aoi)  # Load shapefile as SpatVector
+    aoi <- vect(aoi) # Load shapefile as SpatVector
   }
 
   if (!inherits(aoi, "SpatRaster") && !inherits(aoi, "SpatVector")) {
@@ -82,11 +117,13 @@ fetch_SOL <- function(aoi, properties, depths, measures,
 
         suffix_str <- ifelse(nchar(suffix) > 0, paste0("_", suffix), "")
         output_file <- if (!is.null(output_dir) && export) {
-          file.path(output_dir, paste0("SOL_", prop, "_", depth, "_", measure, suffix_str, ".tif"))
+          file.path(
+            output_dir,
+            paste0("SOL_", prop, "_", depth, "_", measure, suffix_str, ".tif")
+          )
         } else {
           tempfile(fileext = ".tif")
         }
-
 
         # Check if the file exists on the server before downloading
         response <- HEAD(file_url)
@@ -96,15 +133,24 @@ fetch_SOL <- function(aoi, properties, depths, measures,
         }
 
         # Download the raster
-        tryCatch({
-          download.file(file_url, output_file, mode = "wb", timeout = 55)
-        }, error = function(e) {
-          message("Download failed for: ", file_url, " | Trying httr::GET()")
-          GET(file_url, write_disk(output_file, overwrite = TRUE), timeout(300))
-        })
+        tryCatch(
+          {
+            download.file(file_url, output_file, mode = "wb", timeout = 55)
+          },
+          error = function(e) {
+            message("Download failed for: ", file_url, " | Trying httr::GET()")
+            GET(
+              file_url,
+              write_disk(output_file, overwrite = TRUE),
+              timeout(300)
+            )
+          }
+        )
 
         # Store file path if exporting
-        if (export) file_paths <- append(file_paths, output_file)
+        if (export) {
+          file_paths <- append(file_paths, output_file)
+        }
 
         # Load raster into R
         raster <- rast(output_file)
@@ -118,6 +164,7 @@ fetch_SOL <- function(aoi, properties, depths, measures,
 
         # Crop the raster to AOI
         cropped_raster <- crop(raster, aoi)
+        cropped_raster <- cropped_raster * lookup_scalar(prop, depth, measure)
 
         # Create a temporary file to avoid overwrite error
         temp_file <- paste0(output_file, "_tmp.tif")
@@ -129,7 +176,9 @@ fetch_SOL <- function(aoi, properties, depths, measures,
         file.rename(temp_file, output_file)
 
         # Store raster in list
-        raster_list[[paste0(prop, "_", depth, "_", measure)]] <- rast(output_file)
+        raster_list[[paste0(prop, "_", depth, "_", measure)]] <- rast(
+          output_file
+        )
 
         message("Processed and saved: ", output_file)
       }
@@ -138,7 +187,7 @@ fetch_SOL <- function(aoi, properties, depths, measures,
 
   # Ensure there are downloaded rasters
   if (length(raster_list) == 0) {
-    stop("No rasters were successfully downloaded.")  # Handle empty case
+    stop("No rasters were successfully downloaded.") # Handle empty case
   }
 
   # Initialize an empty SpatRaster
@@ -146,7 +195,7 @@ fetch_SOL <- function(aoi, properties, depths, measures,
 
   # Append each raster to the stack
   for (r in raster_list) {
-    raster_stack <- c(raster_stack, r)  # Append raster using `c()`
+    raster_stack <- c(raster_stack, r) # Append raster using `c()`
   }
 
   # Rename bands based on property and depth
@@ -162,6 +211,4 @@ fetch_SOL <- function(aoi, properties, depths, measures,
 
   # Return structured output
   return(list(stack = raster_stack, file_paths = file_paths, product = "SOL"))
-
-
 }
