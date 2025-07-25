@@ -50,6 +50,17 @@ fetch_SOL <- function(
 ) {
   base_url <- "https://storage.googleapis.com/solus100pub/"
 
+  # Load scalar lookup from package inst/extdata
+  lookup_path <- system.file(
+    "extdata",
+    "scalar_lookup.csv",
+    package = "OpenSoilDataR"
+  )
+  if (lookup_path == "") {
+    stop("Could not find scalar_lookup.csv in inst/extdata/")
+  }
+  scalar_table <- read.csv(lookup_path)
+
   # Available SOLUS soil properties
   valid_properties <- c(
     "anylithicdpt",
@@ -164,7 +175,25 @@ fetch_SOL <- function(
 
         # Crop the raster to AOI
         cropped_raster <- crop(raster, aoi)
-        cropped_raster <- cropped_raster * lookup_scalar(prop, depth, measure)
+        match_row <- scalar_table[
+          scalar_table$property == prop &
+            scalar_table$depth == depth &
+            scalar_table$measure == measure,
+        ]
+
+        if (nrow(match_row) == 1) {
+          scalar_value <- match_row$scalar[1]
+          cropped_raster <- cropped_raster * scalar_value
+        } else {
+          warning(
+            "No matching scalar found for ",
+            prop,
+            ", ",
+            depth,
+            ", ",
+            measure
+          )
+        }
 
         # Create a temporary file to avoid overwrite error
         temp_file <- paste0(output_file, "_tmp.tif")
