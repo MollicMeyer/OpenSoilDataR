@@ -177,7 +177,7 @@ fetch_SOL <- function(
         # Crop the raster to AOI
         cropped_raster <- crop(raster, aoi)
         match_row <- scalar_table[
-          scalar_table$property == prop &
+          scalar_table$prop == prop &
             scalar_table$depth == depth &
             scalar_table$measure == measure,
         ]
@@ -185,6 +185,16 @@ fetch_SOL <- function(
         if (nrow(match_row) == 1) {
           scalar_value <- match_row$scalar[1]
           cropped_raster <- cropped_raster * scalar_value
+          message(
+            "Applying scalar: ",
+            scalar_value,
+            " to ",
+            prop,
+            "_",
+            depth,
+            "_",
+            measure
+          )
         } else {
           warning(
             "No matching scalar found for ",
