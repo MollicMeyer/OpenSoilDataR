@@ -572,7 +572,8 @@ s.zonalstats <- function(
           raster_layer <- soil_rasters[[raster_name]]
 
           for (stat in stats) {
-            zonal_stats <- zonal(raster_layer, poly, stat)
+            zonal_fun <- match.fun(stat)
+            zonal_stats <- terra::zonal(raster_layer, poly, zonal_fun)
 
             # Store per-depth statistics
             results_df <- rbind(
@@ -596,7 +597,8 @@ s.zonalstats <- function(
           weighted_raster <- sum(selected_rasters * weights) / sum(weights)
 
           for (stat in stats) {
-            zonal_stats <- zonal(weighted_raster, poly, stat)
+            zonal_fun <- match.fun(stat)
+            zonal_stats <- terra::zonal(raster_layer, poly, zonal_fun)
 
             # Store weighted mean statistics separately
             weighted_mean_df <- rbind(
