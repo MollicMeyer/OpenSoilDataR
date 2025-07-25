@@ -1,0 +1,204 @@
+lookup_scalar <- function(property, depth, measure) {
+  filetype <- switch(
+    measure,
+    "l" = "95% low prediction interval",
+    "h" = "95% high prediction interval",
+    "p" = "prediction",
+    "rpi" = "relative prediction interval"
+  )
+
+  scalar_table <- structure(
+    list(
+      property = c(
+        "anylithicdpt",
+        "anylithicdpt",
+        "anylithicdpt",
+        "anylithicdpt",
+        "anylithicdpt",
+        "caco3",
+        "caco3",
+        "caco3",
+        "caco3",
+        "cec7",
+        "cec7",
+        "cec7",
+        "cec7",
+        "claytotal",
+        "claytotal",
+        "claytotal",
+        "claytotal",
+        "dbovendry",
+        "dbovendry",
+        "dbovendry",
+        "dbovendry",
+        "ec",
+        "ec",
+        "ec",
+        "ec",
+        "ecec",
+        "ecec",
+        "ecec",
+        "ecec",
+        "fragvol",
+        "fragvol",
+        "fragvol",
+        "fragvol",
+        "gypsum",
+        "gypsum",
+        "gypsum",
+        "gypsum",
+        "ph1to1h2o",
+        "ph1to1h2o",
+        "ph1to1h2o",
+        "ph1to1h2o",
+        "resdept",
+        "resdept",
+        "resdept",
+        "resdept",
+        "sandco",
+        "sandco",
+        "sandco",
+        "sandco",
+        "sandfine",
+        "sandfine",
+        "sandfine",
+        "sandfine",
+        "sandmed",
+        "sandmed",
+        "sandmed",
+        "sandmed",
+        "sandtotal",
+        "sandtotal",
+        "sandtotal",
+        "sandtotal",
+        "sandvc",
+        "sandvc",
+        "sandvc",
+        "sandvc",
+        "sandvf",
+        "sandvf",
+        "sandvf",
+        "sandvf",
+        "sar",
+        "sar",
+        "sar",
+        "sar",
+        "silttotal",
+        "silttotal",
+        "silttotal",
+        "silttotal",
+        "soc",
+        "soc",
+        "soc",
+        "soc"
+      ),
+      depth = rep(c("0_cm", "5_cm", "15_cm", "30_cm"), each = 20),
+      filetype = rep(c("prediction"), 80),
+      scalar = c(
+        1,
+        1,
+        1,
+        1,
+        1, # anylithicdpt
+        0.1,
+        0.1,
+        0.1,
+        0.1, # caco3
+        1,
+        1,
+        1,
+        1, # cec7
+        1,
+        1,
+        1,
+        1, # claytotal
+        0.01,
+        0.01,
+        0.01,
+        0.01, # dbovendry
+        1,
+        1,
+        1,
+        1, # ec
+        1,
+        1,
+        1,
+        1, # ecec
+        1,
+        1,
+        1,
+        1, # fragvol
+        0.1,
+        0.1,
+        0.1,
+        0.1, # gypsum
+        0.1,
+        0.1,
+        0.1,
+        0.1, # ph1to1h2o
+        1,
+        1,
+        1,
+        1, # resdept
+        1,
+        1,
+        1,
+        1, # sandco
+        1,
+        1,
+        1,
+        1, # sandfine
+        1,
+        1,
+        1,
+        1, # sandmed
+        1,
+        1,
+        1,
+        1, # sandtotal
+        1,
+        1,
+        1,
+        1, # sandvc
+        1,
+        1,
+        1,
+        1, # sandvf
+        1,
+        1,
+        1,
+        1, # sar
+        1,
+        1,
+        1,
+        1, # silttotal
+        0.1,
+        0.1,
+        0.1,
+        0.1
+      ) # soc
+    ),
+    class = "data.frame"
+  )
+
+  match_row <- subset(
+    scalar_table,
+    property == property &
+      depth == depth &
+      filetype == filetype
+  )
+
+  if (nrow(match_row) == 1) {
+    return(as.numeric(match_row$scalar))
+  } else {
+    warning(
+      "No matching scalar found for ",
+      property,
+      ", ",
+      depth,
+      ", ",
+      measure
+    )
+    return(1)
+  }
+}
