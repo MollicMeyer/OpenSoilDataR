@@ -8,7 +8,7 @@ fetch_PSP(
   aoi,
   properties,
   depths,
-  output_dir,
+  output_dir = NULL,
   suffix = "",
   crs = "EPSG:4326",
   scale = 30,
@@ -20,30 +20,30 @@ fetch_PSP(
 \arguments{
 \item{aoi}{SpatRaster, SpatVector, or file path to a shapefile. The area of interest.}
 
-\item{properties}{Character vector. List of soil properties to download (e.g., `"bd_mean"`, `"clay_mean"`, `"om_mean"`).}
+\item{properties}{Character vector. List of soil properties to download (e.g., \code{"bd_mean"}, \code{"clay_mean"}, \code{"om_mean"}).}
 
-\item{depths}{Character vector. Depth intervals to download (e.g., `"0_5"`, `"5_15"`).}
+\item{depths}{Character vector. Depth intervals to download (e.g., \code{"0_5"}, \code{"5_15"}).}
 
-\item{output_dir}{Character. Directory where files will be saved. Set to `NULL` to keep only in memory.}
+\item{output_dir}{Character. Directory where files will be saved. Set to \code{NULL} to keep only in memory.}
 
 \item{suffix}{Character. Optional suffix for file names.}
 
-\item{crs}{Character. Coordinate reference system for the output. Default is `"EPSG:4326"`.}
+\item{crs}{Character. Coordinate reference system for the output. Default is \code{"EPSG:4326"}.}
 
-\item{scale}{Numeric. Resolution in meters. Default is `30`.}
+\item{scale}{Numeric. Resolution in meters. Default is \code{30}.}
 
-\item{export}{Logical. If `TRUE`, saves downloaded rasters to `output_dir`. Default is `TRUE`.}
+\item{export}{Logical. If \code{TRUE}, saves downloaded rasters to \code{output_dir}. Default is \code{TRUE}.}
 
-\item{tosoc}{Logical. If `TRUE`, converts Organic Matter (`om_mean`) to Soil Organic Carbon (SOC) using the Van Bemmelen factor (1.724).}
+\item{tosoc}{Logical. If \code{TRUE}, converts Organic Matter (\code{om_mean}) to Soil Organic Carbon (SOC) using the Van Bemmelen factor (1.724).}
 
-\item{convertOM}{Logical. If `TRUE`, converts Organic Matter (`om_mean`) from log10 to percentage. Default is `FALSE`.}
+\item{convertOM}{Logical. If \code{TRUE}, converts Organic Matter (\code{om_mean}) from log10 to percentage. Default is \code{FALSE}.}
 }
 \value{
 A list with the following elements:
 \describe{
-  \item{\code{stack}}{A `SpatRaster` containing all downloaded layers.}
-  \item{\code{file_paths}}{A character vector of file paths (if `export = TRUE`).}
-  \item{\code{product}}{A character string `"PSP"` identifying the dataset.}
+\item{\code{stack}}{A \code{SpatRaster} containing all downloaded layers.}
+\item{\code{file_paths}}{A character vector of file paths (if \code{export = TRUE}).}
+\item{\code{product}}{A character string \code{"PSP"} identifying the dataset.}
 }
 }
 \description{

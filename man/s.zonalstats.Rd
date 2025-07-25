@@ -18,7 +18,7 @@ s.zonalstats(
 )
 }
 \arguments{
-\item{soil_data}{A \code{SpatRaster} or list of \code{SpatRaster} objects from \code{fetch_PSP}, \code{fetch_SG2}, or \code{fetch_SOL}.}
+\item{soil_data}{A \code{SpatRaster} or list of \code{SpatRaster} objects from \code{fetch_PSP}, \code{fetch_SG2}, \code{fetch_SOL} or \code{fetch_SGO}.}
 
 \item{tdepth}{Numeric. Top depth of interest (cm).}
 
@@ -136,7 +136,7 @@ A list containing:
 }
 \description{
 This function calculates zonal statistics for soil property rasters from POLARIS (PSP),
-SoilGrids v2 (SG2), SOLUS100 (SOL), and CSRL Soil props 800. It ensures that depth intervals from different
+SoilGrids v2 (SG2), SOLUS100 (SOL), CSRL Soil props 800, and SSURGO/gNATSGO/RSS (SGO). It ensures that depth intervals from different
 datasets are consistently translated, and supports depth-weighted averaging.
 }
 \examples{

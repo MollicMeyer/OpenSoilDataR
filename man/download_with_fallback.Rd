@@ -17,5 +17,5 @@ download_with_fallback(url, destfile, timeout = 55)
 Downloads the file or throws an error.
 }
 \description{
-Attempts to download a file. If `download.file()` fails or takes too long, it falls back to `httr::GET()`.
+Attempts to download a file. If \code{download.file()} fails or takes too long, it falls back to \code{httr::GET()}.
 }

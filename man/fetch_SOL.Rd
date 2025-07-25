@@ -27,14 +27,14 @@ fetch_SOL(
 
 \item{suffix}{Character. Optional suffix for filenames.}
 
-\item{export}{Logical. If TRUE, saves downloaded rasters to `output_dir`.}
+\item{export}{Logical. If TRUE, saves downloaded rasters to \code{output_dir}.}
 }
 \value{
 A list with the following elements:
 \describe{
-  \item{\code{stack}}{A `SpatRaster` containing all downloaded layers.}
-  \item{\code{file_paths}}{A character vector of file paths (if `export = TRUE`).}
-  \item{\code{product}}{A character string `"SOL"` identifying the dataset.}
+\item{\code{stack}}{A \code{SpatRaster} containing all downloaded layers.}
+\item{\code{file_paths}}{A character vector of file paths (if \code{export = TRUE}).}
+\item{\code{product}}{A character string \code{"SOL"} identifying the dataset.}
 }
 }
 \description{

@@ -10,7 +10,7 @@ file_exists_on_server(url)
 \item{url}{Character. The URL of the file.}
 }
 \value{
-Logical. `TRUE` if the file exists, `FALSE` otherwise.
+Logical. \code{TRUE} if the file exists, \code{FALSE} otherwise.
 }
 \description{
 Sends an HTTP HEAD request to check if a file is available at the specified URL.

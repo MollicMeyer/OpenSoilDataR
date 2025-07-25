@@ -18,26 +18,26 @@ fetch_SG2(
 \arguments{
 \item{aoi}{SpatRaster, SpatVector, or file path to a shapefile. The area of interest.}
 
-\item{properties}{Character vector. List of soil properties to download (e.g., `"clay"`, `"soc"`, `"phh2o"`).}
+\item{properties}{Character vector. List of soil properties to download (e.g., \code{"clay"}, \code{"soc"}, \code{"phh2o"}).}
 
-\item{depths}{Character vector. Soil depth intervals to download (e.g., `"0-5cm"`, `"5-15cm"`).}
+\item{depths}{Character vector. Soil depth intervals to download (e.g., \code{"0-5cm"}, \code{"5-15cm"}).}
 
 \item{output_dir}{Character. Directory where files will be saved. Set to NULL to keep only in memory.}
 
 \item{suffix}{Character. Optional suffix for file names.}
 
-\item{crs}{Character. Coordinate reference system for the output. Default is `"EPSG:4326"`.}
+\item{crs}{Character. Coordinate reference system for the output. Default is \code{"EPSG:4326"}.}
 
-\item{scale}{Numeric. Resolution in meters. Default is `250` (meters).}
+\item{scale}{Numeric. Resolution in meters. Default is \code{250} (meters).}
 
-\item{export}{Logical. If `TRUE`, saves downloaded rasters to `output_dir`. Default is `TRUE`.}
+\item{export}{Logical. If \code{TRUE}, saves downloaded rasters to \code{output_dir}. Default is \code{TRUE}.}
 }
 \value{
 A list with the following elements:
 \describe{
-  \item{\code{stack}}{A `SpatRaster` containing all downloaded layers.}
-  \item{\code{file_paths}}{A character vector of file paths (if `export = TRUE`).}
-  \item{\code{product}}{A character string `"SG2"` identifying the dataset.}
+\item{\code{stack}}{A \code{SpatRaster} containing all downloaded layers.}
+\item{\code{file_paths}}{A character vector of file paths (if \code{export = TRUE}).}
+\item{\code{product}}{A character string \code{"SG2"} identifying the dataset.}
 }
 }
 \description{
