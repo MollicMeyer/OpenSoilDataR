@@ -160,6 +160,10 @@ s.zonalstats <- function(
     )
   }
 
+  if (inherits(shapes, "SpatVector")) {
+    shapes <- sf::st_as_sf(shapes)
+  }
+
   # Property Lookup Table for use in s.zonalstats()
   property_lookup <- list(
     # Water Retention
