@@ -3,7 +3,7 @@
 #' @param rstack A `SpatRaster` with layer names indicating depth intervals (e.g., "claytotal_r_0_5")
 #' @return A `SoilProfileCollection` object
 #' @export
-ras_to_SPC <- function(rstack) {
+ras_to_SPC <- function(rstack, source = "R") {
   require(terra)
   require(dplyr)
   require(tidyr)
@@ -31,7 +31,7 @@ ras_to_SPC <- function(rstack) {
 
   # Extract raster to data.frame
   df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
-  df$peiid <- paste0("cell_", df$cell)
+  df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
   long_df <- df %>%
