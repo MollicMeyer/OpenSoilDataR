@@ -76,10 +76,7 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_character_
       },
       variable = if (!is.na(matched_string)) {
-        str_remove(
-          layer,
-          paste0(fixed(matched_string), "$|", fixed(matched_string), "_")
-        )
+        str_replace(layer, paste0("_?", fixed(matched_string), "_?$"), "")
       } else {
         NA_character_
       }
