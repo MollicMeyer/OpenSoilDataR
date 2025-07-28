@@ -34,6 +34,7 @@ ras_to_SPC <- function(rstack, source = "R") {
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
+  # Long format, parse depths and variable names
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
@@ -59,50 +60,22 @@ ras_to_SPC <- function(rstack, source = "R") {
       } else {
         NA_real_
       },
-
-      variable = case_when(
-        str_detect(
-          layer,
-          paste0(
-            "_\\d+_cm_(",
-            paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
-            ")$"
-          )
-        ) ~
-          str_remove(
-            layer,
-            paste0(
-              "_\\d+_cm_(",
-              paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
-              ")$"
-            )
-          ),
-        str_detect(
-          layer,
-          paste0(
-            "_(\\d+(-|_)\\d+|\\d+)(cm)?(_(",
-            paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
-            "))?$"
-          )
-        ) ~
-          str_remove(
-            layer,
-            paste0(
-              "_(\\d+(-|_)\\d+|\\d+)(cm)?(_(",
-              paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
-              "))?$"
-            )
-          ),
-        TRUE ~ layer
+      # Truncate variable name before depth and suffix
+      variable = str_remove(
+        layer,
+        paste0(
+          "_(\\d+(_|-)?\\d*)(_cm)?_?(",
+          paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
+          ")?$"
+        )
       )
     ) %>%
     ungroup() %>%
-    mutate(value = as.numeric(value)) %>% # <-- THIS FIXES THE LIST-COLUMN ISSUE
-    pivot_wider(names_from = variable, values_from = value)
+    mutate(value = as.numeric(value)) %>% # Fix for list-column issue
+    select(peiid, hzdept, hzdepb, variable, value)
 
   # Pivot into horizon format
   hz_data <- long_df %>%
-    select(peiid, hzdept, hzdepb, variable, value) %>%
     pivot_wider(names_from = variable, values_from = value)
 
   # Construct SPC
