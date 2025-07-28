@@ -33,6 +33,7 @@ ras_to_SPC <- function(rstack, source = "R") {
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
+  # Long format: one row per layer (cell-depth-variable combo)
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
@@ -58,20 +59,27 @@ ras_to_SPC <- function(rstack, source = "R") {
       } else {
         NA_real_
       },
-      variable = {
-        # Strip known suffixes (e.g., "_0_cm_p", "_5_cm_mean", etc.)
-        depth_pattern <- "_(\\d+)(_(cm))?(_)?(p|r|l|h|rpi|mean)?$"
-        str_remove(layer, depth_pattern)
-      }
+
+      # Extract the variable name BEFORE the depth and suffix
+      variable = str_remove(
+        layer,
+        paste0(
+          "_(\\d+(_)?cm)?(_)?(",
+          paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
+          ")$"
+        )
+      )
     ) %>%
     ungroup() %>%
     mutate(value = as.numeric(value)) %>%
-    distinct(peiid, hzdept, hzdepb, variable, .keep_all = TRUE) %>%
-    pivot_wider(names_from = variable, values_from = value)
+    filter(!is.na(hzdept) & !is.na(hzdepb)) # Remove unassigned rows
 
-  # Pivot into horizon format
+  # Now pivot WIDER, grouped by depth + peiid
   hz_data <- long_df %>%
-    select(peiid, hzdept, hzdepb, everything())
+    select(peiid, hzdept, hzdepb, variable, value) %>%
+    group_by(peiid, hzdept, hzdepb, variable) %>%
+    summarise(value = first(value), .groups = "drop") %>% # <- resolves duplicate issue
+    pivot_wider(names_from = variable, values_from = value)
 
   # Construct SPC
   depths(hz_data) <- peiid ~ hzdept + hzdepb
