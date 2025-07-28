@@ -7,15 +7,16 @@
 pts_to_SPC(rstack, locations, id_column = "Name")
 }
 \arguments{
-\item{rstack}{A \code{SpatRaster} object}
+\item{rstack}{A \code{SpatRaster} object with depth-structured layers.}
 
-\item{locations}{An \code{sf} or \code{SpatVector} object of point locations}
+\item{locations}{An \code{sf} or \code{SpatVector} object of point locations.}
 
-\item{id_column}{A column name in \code{locations} that uniquely identifies each point (e.g., "Name")}
+\item{id_column}{A column name in \code{locations} that uniquely identifies each point (e.g., "Name").}
 }
 \value{
-A \code{SoilProfileCollection} object
+A \code{SoilProfileCollection} object with extracted and structured soil horizon data.
 }
 \description{
-Convert Extracted Point Soil Data to SoilProfileCollection
+This function extracts raster values at point locations, reshapes the data into horizon format,
+and converts it into an \code{aqp::SoilProfileCollection}.
 }

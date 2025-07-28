@@ -4,7 +4,13 @@
 \alias{zones_to_SPC}
 \title{Convert zonal raster statistics into a SoilProfileCollection}
 \usage{
-zones_to_SPC(rstack, zones, stat = "mean", id_column = "Name")
+zones_to_SPC(
+  rstack,
+  zones,
+  stat = "mean",
+  id_column = "Name",
+  subset_ids = NULL
+)
 }
 \arguments{
 \item{rstack}{A \code{SpatRaster} containing stacked soil property rasters.}
@@ -14,6 +20,8 @@ zones_to_SPC(rstack, zones, stat = "mean", id_column = "Name")
 \item{stat}{A summary statistic to apply per zone (e.g., "mean", "median"). Default: "mean".}
 
 \item{id_column}{Character. Name of the column in \code{zones} to use as profile IDs.}
+
+\item{subset_ids}{Optional character vector of values in \code{id_column} to filter the polygons before extraction.}
 }
 \value{
 A \code{SoilProfileCollection} with horizon data extracted from the raster stack.

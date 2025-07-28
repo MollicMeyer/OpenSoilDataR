@@ -4,7 +4,7 @@
 \alias{ras_to_SPC}
 \title{Convert RasterStack to SoilProfileCollection}
 \usage{
-ras_to_SPC(rstack)
+ras_to_SPC(rstack, source = "R")
 }
 \arguments{
 \item{rstack}{A \code{SpatRaster} with layer names indicating depth intervals (e.g., "claytotal_r_0_5")}
