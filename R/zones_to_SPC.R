@@ -116,21 +116,13 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     dupes <- long_df %>%
     count(peiid, hzdept, hzdepb, variable) %>%
     filter(n > 1)
-
   if (nrow(dupes) > 0) {
     warning(
       "Duplicates found in the data before pivot_wider(). See `dupes` for details."
     )
     print(dupes)
   }
-
   pivot_wider(names_from = variable, values_from = value)
-
-  long_df <- long_df %>%
-    mutate(across(
-      where(~ is.list(.x) && all(map_lgl(.x, ~ length(.x) == 1))),
-      ~ unlist(.x)
-    ))
 
   depths(long_df) <- peiid ~ hzdept + hzdepb
 
