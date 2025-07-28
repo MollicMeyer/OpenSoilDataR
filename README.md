@@ -18,8 +18,8 @@ casoilresource.lawr.ucdavis.edu/soil-properties/.```
 - **SSURGO/gNATSGO/RSS (SGO)**  ```USDA Natural Resources Conservation Service, 2024. Soil Survey Geographic (SSURGO) Database. United States Department of Agriculture. Available at: https://sdmdataaccess.nrcs.usda.gov```
 
 - compute **zonal statistics** for soil properties
-- create **SoilProfileColletion** objects from **points**,**zones**, and **rasters**
-- plot comparison soil depth functions for different public soil dataset map products
+- create **SoilProfileCollection** objects from **points**, **zones**, and **rasters**
+- plot comparison **soil depth functions** for different public soil dataset map products
 
 ---
 
