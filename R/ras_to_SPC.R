@@ -29,16 +29,18 @@ ras_to_SPC <- function(rstack, source = "R") {
     "100_200" = c(100, 200)
   )
 
+  # Convert raster to data.frame
   df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
-  # Long format: one row per layer (cell-depth-variable combo)
+  # Long-form data + parsing
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     rowwise() %>%
     mutate(
+      # Match depth label
       matched_label = {
         matches <- sapply(depth_interval_lookup, function(pats) {
           any(str_detect(layer, paste0("(", paste(pats, collapse = "|"), ")")))
@@ -60,30 +62,23 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_real_
       },
 
-      # Extract the variable name BEFORE the depth and suffix
-      variable = str_remove(
-        layer,
-        paste0(
-          "_(\\d+(_)?cm)?(_)?(",
-          paste(c("p", "r", "l", "h", "rpi", "mean"), collapse = "|"),
-          ")$"
-        )
-      )
+      # Extract base variable name before matched depth + suffix
+      variable = if (!is.na(matched_label)) {
+        str_remove(layer, paste0("_?", matched_label, ".*$"))
+      } else {
+        NA_character_
+      }
     ) %>%
     ungroup() %>%
     mutate(value = as.numeric(value)) %>%
-    filter(!is.na(hzdept) & !is.na(hzdepb)) # Remove unassigned rows
-
-  # Now pivot WIDER, grouped by depth + peiid
-  hz_data <- long_df %>%
-    select(peiid, hzdept, hzdepb, variable, value) %>%
+    filter(!is.na(hzdept), !is.na(hzdepb)) %>%
     group_by(peiid, hzdept, hzdepb, variable) %>%
-    summarise(value = first(value), .groups = "drop") %>% # <- resolves duplicate issue
+    summarise(value = first(value), .groups = "drop") %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  # Construct SPC
-  depths(hz_data) <- peiid ~ hzdept + hzdepb
-  site(hz_data) <- site_data
+  # Construct SoilProfileCollection
+  depths(long_df) <- peiid ~ hzdept + hzdepb
+  site(long_df) <- site_data
 
-  return(hz_data)
+  return(long_df)
 }
