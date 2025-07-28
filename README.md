@@ -149,6 +149,11 @@ ggplot(z_wide, aes(x = Plot, y = mean, color = Product)) +
   labs(x = "Plot", y = "Mean ± SD", title = "Zonal Statistics by Plot and Product", color = "Product") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+## 📊 Zonal Statistics Output
+
+Below is an example of the zonal statistics summary across four SABR plots:
+
+![Zonal Stats Plot](man/figures/zonalstatsplot.png)
 
 ---
 
@@ -165,6 +170,9 @@ sg2_spc <- ras_to_SPC(sg2$stack, source = "SG2")
 spc_list <- list(sgo_spc, psp_spc, sg2_spc, sol_spc)
 plot_depth_functions(spc_list, c("SGO", "PSP", "SG2", "SOL"), c("sand", "clay", "soc", "ph"), c(0,5,15,30,60,100,150))
 ```
+## 📉 Depth Function Comparison Across Products
+
+![Depth Function Comparison](man/figures/depthfunctionexample.png)
 
 ### From Polygons (Zone-Averaged)
 
