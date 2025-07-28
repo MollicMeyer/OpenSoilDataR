@@ -6,6 +6,7 @@
 #' @param rstack A `SpatRaster` object with depth-structured layers.
 #' @param locations An `sf` or `SpatVector` object of point locations.
 #' @param id_column A column name in `locations` that uniquely identifies each point (e.g., "Name").
+#'
 #' @return A `SoilProfileCollection` object with extracted and structured soil horizon data.
 #' @export
 pts_to_SPC <- function(rstack, locations, id_column = "Name") {
@@ -13,7 +14,6 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
   require(dplyr)
   require(tidyr)
   require(aqp)
-  require(sf)
   require(stringr)
 
   depth_interval_lookup <- list(
@@ -74,18 +74,22 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
         NA_real_
       },
       matched_string = if (!is.na(matched_label)) {
+        match_found <- NA_character_
         for (val in depth_interval_lookup[[matched_label]]) {
           if (str_detect(layer, fixed(val))) {
-            return(val)
+            match_found <- val
+            break
           }
         }
+        match_found
       } else {
         NA_character_
       },
       variable = if (!is.na(matched_string)) {
         var <- str_replace(layer, fixed(matched_string), "")
         var <- str_replace_all(var, "__+", "_")
-        str_remove_all(var, "^_|_$")
+        var <- str_remove_all(var, "^_|_$")
+        var
       } else {
         NA_character_
       }
@@ -93,10 +97,13 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
     ungroup() %>%
     filter(!is.na(hzdept), !is.na(hzdepb), !is.na(variable)) %>%
     mutate(value = as.numeric(value)) %>%
+    group_by(peiid, hzdept, hzdepb, variable) %>%
+    summarize(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  depths(long_df) <- peiid ~ hzdept + hzdepb
-  site(long_df) <- extracted %>% select(peiid)
+  spc <- long_df
+  depths(spc) <- peiid ~ hzdept + hzdepb
+  site(spc) <- tibble(peiid = unique(long_df$peiid)) # Add minimal site data
 
-  return(long_df)
+  return(spc)
 }
