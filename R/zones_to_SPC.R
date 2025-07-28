@@ -111,20 +111,21 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     ungroup() %>%
     filter(!is.na(hzdept), !is.na(hzdepb), !is.na(variable)) %>%
     mutate(value = as.numeric(value)) %>%
-    select(peiid, hzdept, hzdepb, variable, value) %>%
-    # Check for duplicates BEFORE pivot_wider
-    dupes <- long_df %>%
+    select(peiid, hzdept, hzdepb, variable, value) -> long_df # stop here
+
+  # 🔍 Check for duplicates that will cause list-columns
+  dupes <- long_df %>%
     count(peiid, hzdept, hzdepb, variable) %>%
     filter(n > 1)
+
   if (nrow(dupes) > 0) {
-    warning(
-      "Duplicates found in the data before pivot_wider(). See `dupes` for details."
-    )
+    warning("⚠️ Duplicates found before pivot_wider. Use `dupes` to inspect.")
     print(dupes)
   }
-  pivot_wider(names_from = variable, values_from = value)
 
-  depths(long_df) <- peiid ~ hzdept + hzdepb
+  # 👉 Then continue reshaping
+  long_df <- long_df %>%
+    pivot_wider(names_from = variable, values_from = value)
 
   site_meta <- as.data.frame(zones)[, id_column, drop = FALSE]
   colnames(site_meta)[1] <- "peiid"
