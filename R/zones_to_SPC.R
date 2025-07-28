@@ -115,9 +115,14 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     summarize(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(names_from = variable, values_from = value)
 
+  # Convert to SoilProfileCollection
+  spc <- long_df
+  depths(spc) <- peiid ~ hzdept + hzdepb
+
+  # Assign site metadata
   site_meta <- as.data.frame(zones)[, id_column, drop = FALSE]
   colnames(site_meta)[1] <- "peiid"
-  site(long_df) <- left_join(site(long_df), site_meta, by = "peiid")
+  site(spc) <- site_meta
 
-  return(long_df)
+  return(spc)
 }
