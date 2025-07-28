@@ -34,25 +34,25 @@ ras_to_SPC <- function(rstack, source = "R") {
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
-  # Step 2: Parse long format and extract depth label
+  # Pivot to long and match
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     rowwise() %>%
     mutate(
-      # Find the key in depth_interval_lookup whose value appears exactly in the layer name
+      # Find exact match substring from the lookup values
       matched_label = {
-        match_found <- NA_character_
+        matched <- NA_character_
         for (key in names(depth_interval_lookup)) {
-          for (val in depth_interval_lookup[[key]]) {
-            if (str_detect(layer, fixed(val))) {
-              match_found <- key
+          for (pattern in depth_interval_lookup[[key]]) {
+            if (str_detect(layer, fixed(pattern))) {
+              matched <- key
               break
             }
           }
-          if (!is.na(match_found)) break
+          if (!is.na(matched)) break
         }
-        match_found
+        matched
       },
       hzdept = if (!is.na(matched_label)) {
         depth_range_lookup[[matched_label]][1]
@@ -64,15 +64,24 @@ ras_to_SPC <- function(rstack, source = "R") {
       } else {
         NA_real_
       },
-      variable = if (!is.na(matched_label)) {
-        str_remove(
-          layer,
-          paste0(
-            "_?",
-            paste0(depth_interval_lookup[[matched_label]], collapse = "|"),
-            ".*$"
-          )
-        )
+
+      # Extract the exact matched substring
+      matched_string = if (!is.na(matched_label)) {
+        found <- NA_character_
+        for (pattern in depth_interval_lookup[[matched_label]]) {
+          if (str_detect(layer, fixed(pattern))) {
+            found <- pattern
+            break
+          }
+        }
+        found
+      } else {
+        NA_character_
+      },
+
+      # Now remove everything from the matched_string forward (including underscore if present)
+      variable = if (!is.na(matched_string)) {
+        str_remove(layer, paste0("_?", fixed(matched_string), ".*$"))
       } else {
         NA_character_
       }
@@ -82,7 +91,7 @@ ras_to_SPC <- function(rstack, source = "R") {
     mutate(value = as.numeric(value)) %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  # Step 3: Build SoilProfileCollection
+  # Construct SPC
   depths(long_df) <- peiid ~ hzdept + hzdepb
   site(long_df) <- site_data
 
