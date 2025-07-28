@@ -29,12 +29,12 @@ ras_to_SPC <- function(rstack, source = "R") {
     "100_200" = c(100, 200)
   )
 
-  # Convert raster to dataframe
+  # Convert raster to data.frame
   df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
-  # Reshape and extract depth info
+  # Long format with depth & variable parsing
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
@@ -53,6 +53,16 @@ ras_to_SPC <- function(rstack, source = "R") {
         }
         matched
       },
+      hzdept = if (!is.na(matched_label)) {
+        depth_range_lookup[[matched_label]][1]
+      } else {
+        NA_real_
+      },
+      hzdepb = if (!is.na(matched_label)) {
+        depth_range_lookup[[matched_label]][2]
+      } else {
+        NA_real_
+      },
       matched_string = if (!is.na(matched_label)) {
         match_found <- NA_character_
         for (val in depth_interval_lookup[[matched_label]]) {
@@ -66,7 +76,6 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_character_
       },
       variable = if (!is.na(matched_string)) {
-        # Remove matched string and anything trailing
         str_remove(
           layer,
           paste0(fixed(matched_string), "$|", fixed(matched_string), "_")
@@ -80,7 +89,7 @@ ras_to_SPC <- function(rstack, source = "R") {
     mutate(value = as.numeric(value)) %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  # Construct SPC
+  # Construct SoilProfileCollection
   depths(long_df) <- peiid ~ hzdept + hzdepb
   site(long_df) <- site_data
 
