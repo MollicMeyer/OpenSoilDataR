@@ -45,14 +45,14 @@ plot_depth_functions <- function(
       CSRL = NA,
       SGO = "wfifteenbar_r"
     ),
-    "awc" = c(PSP = NA, SG2 = NA, SOL = "awc_r", CSRL = NA, SGO = "awc_r"),
+    "awc" = c(PSP = NA, SG2 = NA, SOL = NA, CSRL = NA, SGO = "awc_r"),
 
     # Phosphorus
     "pbray1" = c(PSP = NA, SG2 = NA, SOL = NA, CSRL = NA, SGO = "pbray1_r"),
     "ptotal" = c(
       PSP = NA,
       SG2 = NA,
-      SOL = "ptotal_r",
+      SOL = NA,
       CSRL = NA,
       SGO = "ptotal_r"
     ),
@@ -69,7 +69,7 @@ plot_depth_functions <- function(
     "bd" = c(
       PSP = "bd_mean",
       SG2 = "bdod",
-      SOL = "dbovendry_r",
+      SOL = "dbovendry",
       CSRL = "bulk_density",
       SGO = "dbovendry_r"
     ),
