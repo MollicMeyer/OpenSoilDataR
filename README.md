@@ -54,8 +54,6 @@ gd_initialize()  # Initialize
 📍 Define Area of Interest (AOI)
 Set your area of interest (AOI) using a raster file:
 
-````
-
 ```r
 aoi_path <- "T:/IA-Kitchen/R/sabR/SABRplots.shp"
 aoi <- terra::vect(aoi_path)
