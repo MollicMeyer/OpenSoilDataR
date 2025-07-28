@@ -88,8 +88,7 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
       variable = if (!is.na(matched_string)) {
         var <- str_replace(layer, fixed(matched_string), "")
         var <- str_replace_all(var, "__+", "_")
-        var <- str_remove_all(var, "^_|_$")
-        var
+        str_remove_all(var, "^_|_$")
       } else {
         NA_character_
       }
