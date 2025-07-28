@@ -44,12 +44,8 @@ ras_to_SPC <- function(rstack, source = "R") {
         match_found <- NA_character_
         for (k in names(depth_interval_lookup)) {
           pats <- depth_interval_lookup[[k]]
-          if (
-            any(str_detect(
-              layer,
-              paste0("(", paste(pats, collapse = "|"), ")")
-            ))
-          ) {
+          pattern <- paste0("\\b(", paste(pats, collapse = "|"), ")\\b")
+          if (str_detect(layer, pattern)) {
             match_found <- k
             break
           }
