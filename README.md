@@ -55,8 +55,10 @@ gd_initialize()  # Initialize
 Set your area of interest (AOI) using a raster file:
 
 ```r
-aoi_path <- "T:/IA-Kitchen/R/sabR/SABRplots.shp"
+# Load AOI shapefile from OpenSoilDataR's example data
+aoi_path <- system.file("extdata", "SABRplots.shp", package = "OpenSoilDataR")
 aoi <- terra::vect(aoi_path)
+
 ```
 
 ---
