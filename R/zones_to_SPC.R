@@ -7,10 +7,17 @@
 #' @param zones A `SpatVector` or `sf` object of polygons used for zonal summaries.
 #' @param stat A summary statistic to apply per zone (e.g., "mean", "median"). Default: "mean".
 #' @param id_column Character. Name of the column in `zones` to use as profile IDs.
+#' @param subset_ids Optional character vector of values in `id_column` to filter the polygons before extraction.
 #'
 #' @return A `SoilProfileCollection` with horizon data extracted from the raster stack.
 #' @export
-zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
+zones_to_SPC <- function(
+  rstack,
+  zones,
+  stat = "mean",
+  id_column = "Name",
+  subset_ids = NULL
+) {
   require(terra)
   require(dplyr)
   require(tidyr)
@@ -35,6 +42,16 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     "60_100" = c(60, 100),
     "100_200" = c(100, 200)
   )
+
+  # Optional subset
+  if (!is.null(subset_ids)) {
+    zones_df <- as.data.frame(zones)
+    zones <- if (inherits(zones, "SpatVector")) {
+      zones[zones_df[[id_column]] %in% subset_ids, ]
+    } else {
+      zones[zones[[id_column]] %in% subset_ids, ]
+    }
+  }
 
   # CRS alignment
   if (!terra::same.crs(rstack, zones)) {
@@ -115,11 +132,11 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
     summarize(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  # Convert to SoilProfileCollection
+  # Convert to SPC
   spc <- long_df
   depths(spc) <- peiid ~ hzdept + hzdepb
 
-  # Assign site metadata
+  # Add site data
   site_meta <- as.data.frame(zones)[, id_column, drop = FALSE]
   colnames(site_meta)[1] <- "peiid"
   site(spc) <- site_meta
