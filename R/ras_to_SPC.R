@@ -29,27 +29,32 @@ ras_to_SPC <- function(rstack, source = "R") {
     "100_200" = c(100, 200)
   )
 
-  # Convert raster to data.frame
+  # Raster to dataframe
   df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
-  # Long-form data + parsing
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     rowwise() %>%
     mutate(
-      # Match depth label
+      # Match the key in depth_interval_lookup whose values match the layer name
       matched_label = {
-        matches <- sapply(depth_interval_lookup, function(pats) {
-          any(str_detect(layer, paste0("(", paste(pats, collapse = "|"), ")")))
-        })
-        if (any(matches)) {
-          names(depth_interval_lookup)[which(matches)[1]]
-        } else {
-          NA_character_
+        match_found <- NA_character_
+        for (k in names(depth_interval_lookup)) {
+          pats <- depth_interval_lookup[[k]]
+          if (
+            any(str_detect(
+              layer,
+              paste0("(", paste(pats, collapse = "|"), ")")
+            ))
+          ) {
+            match_found <- k
+            break
+          }
         }
+        match_found
       },
       hzdept = if (!is.na(matched_label)) {
         depth_range_lookup[[matched_label]][1]
@@ -62,9 +67,16 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_real_
       },
 
-      # Extract base variable name before matched depth + suffix
+      # Remove matched depth label + suffix from variable name
       variable = if (!is.na(matched_label)) {
-        str_remove(layer, paste0("_?", matched_label, ".*$"))
+        str_remove(
+          layer,
+          paste0(
+            "(_)?(",
+            paste(depth_interval_lookup[[matched_label]], collapse = "|"),
+            ").*$"
+          )
+        )
       } else {
         NA_character_
       }
@@ -72,8 +84,7 @@ ras_to_SPC <- function(rstack, source = "R") {
     ungroup() %>%
     mutate(value = as.numeric(value)) %>%
     filter(!is.na(hzdept), !is.na(hzdepb)) %>%
-    group_by(peiid, hzdept, hzdepb, variable) %>%
-    summarise(value = first(value), .groups = "drop") %>%
+    # NO summarise — keep all depths for each variable
     pivot_wider(names_from = variable, values_from = value)
 
   # Construct SoilProfileCollection
