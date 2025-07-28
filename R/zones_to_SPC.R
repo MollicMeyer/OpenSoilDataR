@@ -36,8 +36,13 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
   )
 
   if (!terra::same.crs(rstack, zones)) {
-    zones <- sf::st_transform(zones, terra::crs(rstack))
+    zones <- if (inherits(zones, "SpatVector")) {
+      terra::project(zones, terra::crs(rstack))
+    } else {
+      sf::st_transform(zones, terra::crs(rstack))
+    }
   }
+  zones_vect <- terra::vect(zones)
 
   zones_vect <- terra::vect(zones)
   zstats <- terra::extract(rstack, zones_vect, fun = stat, na.rm = TRUE)
