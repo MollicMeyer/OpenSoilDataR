@@ -1,9 +1,12 @@
 #' Convert Extracted Point Soil Data to SoilProfileCollection
 #'
-#' @param rstack A `SpatRaster` object
-#' @param locations An `sf` or `SpatVector` object of point locations
-#' @param id_column A column name in `locations` that uniquely identifies each point (e.g., "Name")
-#' @return A `SoilProfileCollection` object
+#' This function extracts raster values at point locations, reshapes the data into horizon format,
+#' and converts it into an `aqp::SoilProfileCollection`.
+#'
+#' @param rstack A `SpatRaster` object with depth-structured layers.
+#' @param locations An `sf` or `SpatVector` object of point locations.
+#' @param id_column A column name in `locations` that uniquely identifies each point (e.g., "Name").
+#' @return A `SoilProfileCollection` object with extracted and structured soil horizon data.
 #' @export
 pts_to_SPC <- function(rstack, locations, id_column = "Name") {
   require(terra)
@@ -14,12 +17,12 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
   require(stringr)
 
   depth_interval_lookup <- list(
-    "0_5" = c("0_5", "0-5cm", "0_cm", "0-5"),
-    "5_15" = c("5_15", "5-15cm", "5_cm", "0-25"),
-    "15_30" = c("15_30", "15-30cm", "15_cm", "0-25", "25-50"),
-    "30_60" = c("30_60", "30-60cm", "30_cm", "30-60", "25-50"),
-    "60_100" = c("60_100", "60-100cm", "60_cm", "30-60"),
-    "100_200" = c("100_200", "100-200cm", "100_cm", "150_cm")
+    "0_5" = c("0_5", "0-5cm", "_0_cm_p", "0-5"),
+    "5_15" = c("5_15", "5-15cm", "_5_cm_p", "0-25"),
+    "15_30" = c("15_30", "15-30cm", "_15_cm_p", "0-25", "25-50"),
+    "30_60" = c("30_60", "30-60cm", "_30_cm_p", "30-60", "25-50"),
+    "60_100" = c("60_100", "60-100cm", "_60_cm_p", "30-60"),
+    "100_200" = c("100_200", "100-200cm", "_100_cm_p", "_150_cm_p")
   )
 
   depth_range_lookup <- list(
@@ -48,17 +51,17 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
     rowwise() %>%
     mutate(
       matched_label = {
-        matches <- sapply(depth_interval_lookup, function(pats) {
-          any(str_detect(
-            layer,
-            paste0("_(", paste(pats, collapse = "|"), ")$")
-          ))
-        })
-        if (any(matches)) {
-          names(depth_interval_lookup)[which(matches)[1]]
-        } else {
-          NA_character_
+        matched <- NA_character_
+        for (key in names(depth_interval_lookup)) {
+          for (val in depth_interval_lookup[[key]]) {
+            if (str_detect(layer, fixed(val))) {
+              matched <- key
+              break
+            }
+          }
+          if (!is.na(matched)) break
         }
+        matched
       },
       hzdept = if (!is.na(matched_label)) {
         depth_range_lookup[[matched_label]][1]
@@ -70,27 +73,30 @@ pts_to_SPC <- function(rstack, locations, id_column = "Name") {
       } else {
         NA_real_
       },
-      variable = if (!is.na(matched_label)) {
-        str_remove(
-          layer,
-          paste0(
-            "_(",
-            paste(depth_interval_lookup[[matched_label]], collapse = "|"),
-            ")$"
-          )
-        )
+      matched_string = if (!is.na(matched_label)) {
+        for (val in depth_interval_lookup[[matched_label]]) {
+          if (str_detect(layer, fixed(val))) {
+            return(val)
+          }
+        }
+      } else {
+        NA_character_
+      },
+      variable = if (!is.na(matched_string)) {
+        var <- str_replace(layer, fixed(matched_string), "")
+        var <- str_replace_all(var, "__+", "_")
+        str_remove_all(var, "^_|_$")
       } else {
         NA_character_
       }
     ) %>%
-    ungroup()
-
-  hz_data <- long_df %>%
-    select(peiid, hzdept, hzdepb, variable, value) %>%
+    ungroup() %>%
+    filter(!is.na(hzdept), !is.na(hzdepb), !is.na(variable)) %>%
+    mutate(value = as.numeric(value)) %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  depths(hz_data) <- peiid ~ hzdept + hzdepb
-  site(hz_data) <- extracted %>% select(peiid)
+  depths(long_df) <- peiid ~ hzdept + hzdepb
+  site(long_df) <- extracted %>% select(peiid)
 
-  return(hz_data)
+  return(long_df)
 }
