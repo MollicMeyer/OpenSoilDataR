@@ -76,13 +76,16 @@ ras_to_SPC <- function(rstack, source = "R") {
         NA_character_
       },
       variable = if (!is.na(matched_string)) {
-        # If matched_string is at the end, strip it + separator
-        if (str_detect(layer, paste0("_?", fixed(matched_string), "_?$"))) {
+        var <- if (
+          str_detect(layer, paste0("_?", fixed(matched_string), "_?$"))
+        ) {
           str_replace(layer, paste0("_?", fixed(matched_string), "_?$"), "")
         } else {
-          # Otherwise just remove the matched_string from anywhere
           str_replace(layer, fixed(matched_string), "")
         }
+        var <- str_replace_all(var, "__+", "_") # Replace double underscore
+        var <- str_remove_all(var, "^_|_$") # Trim leading/trailing _
+        var
       } else {
         NA_character_
       }
