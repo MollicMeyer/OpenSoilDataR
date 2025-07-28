@@ -68,7 +68,7 @@ plot_depth_functions <- function(
     # Bulk Density
     "bd" = c(
       PSP = "bd_mean",
-      SG2 = "bdod",
+      SG2 = "bdod_mean",
       SOL = "dbovendry",
       CSRL = "bulk_density",
       SGO = "dbovendry_r"
@@ -98,21 +98,21 @@ plot_depth_functions <- function(
     # Texture
     "clay" = c(
       PSP = "clay_mean",
-      SG2 = "clay",
+      SG2 = "clay_mean",
       SOL = "claytotal",
       CSRL = "clay_profile",
       SGO = "claytotal_r"
     ),
     "sand" = c(
       PSP = "sand_mean",
-      SG2 = "sand",
+      SG2 = "sand_mean",
       SOL = "sandtotal",
       CSRL = "sand_profile",
       SGO = "sandtotal_r"
     ),
     "silt" = c(
       PSP = "silt_mean",
-      SG2 = "silt",
+      SG2 = "silt_mean",
       SOL = "silttotal",
       CSRL = "silt_profile",
       SGO = "silttotal_r"
@@ -135,7 +135,7 @@ plot_depth_functions <- function(
     ),
     "soc" = c(
       PSP = "soc",
-      SG2 = "soc",
+      SG2 = "soc_mean",
       SOL = "soc",
       CSRL = "soc_max",
       SGO = "oc_r"
@@ -151,7 +151,7 @@ plot_depth_functions <- function(
     # Chemistry
     "ph" = c(
       PSP = "ph_mean",
-      SG2 = "phh2o",
+      SG2 = "phh2o_mean",
       SOL = "ph1to1h2o",
       CSRL = "ph_profile",
       SGO = "ph1to1h2o_r"
@@ -172,7 +172,7 @@ plot_depth_functions <- function(
     ),
     "cec" = c(
       PSP = NA,
-      SG2 = "cec",
+      SG2 = "cec_mean",
       SOL = "cec7",
       CSRL = "cec_profile",
       SGO = "cec7_r"
