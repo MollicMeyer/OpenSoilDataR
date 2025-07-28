@@ -44,9 +44,20 @@ zones_to_SPC <- function(rstack, zones, stat = "mean", id_column = "Name") {
   }
   zones_vect <- if (inherits(zones, "SpatVector")) zones else terra::vect(zones)
 
+  # Extract zonal stats
   zstats <- terra::extract(rstack, zones_vect, fun = stat, na.rm = TRUE)
-  zstats[[id_column]] <- zones[[id_column]]
-  names(zstats)[1] <- "peiid"
+
+  # Flatten zone attribute column
+  zone_ids <- as.data.frame(zones)[[id_column]]
+  zstats$peiid <- zone_ids
+
+  # Remove terra default ID col if present
+  if ("ID" %in% names(zstats)) {
+    zstats <- zstats %>% select(-ID)
+  }
+
+  # Make sure peiid is first
+  df <- zstats %>% relocate(peiid)
 
   long_df <- zstats %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
