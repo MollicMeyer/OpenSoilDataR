@@ -96,7 +96,9 @@ ras_to_SPC <- function(rstack, source = "R") {
         TRUE ~ layer
       )
     ) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(value = as.numeric(value)) %>% # <-- THIS FIXES THE LIST-COLUMN ISSUE
+    pivot_wider(names_from = variable, values_from = value)
 
   # Pivot into horizon format
   hz_data <- long_df %>%
