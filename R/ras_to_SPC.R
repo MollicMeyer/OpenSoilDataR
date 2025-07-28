@@ -12,12 +12,12 @@ ras_to_SPC <- function(rstack, source = "R") {
 
   # Lookup tables
   depth_interval_lookup <- list(
-    "0_5" = c("0_5", "0-5cm", "0_cm", "0-5"),
-    "5_15" = c("5_15", "5-15cm", "5_cm", "0-25"),
-    "15_30" = c("15_30", "15-30cm", "15_cm", "0-25", "25-50"),
-    "30_60" = c("30_60", "30-60cm", "30_cm", "30-60", "25-50"),
-    "60_100" = c("60_100", "60-100cm", "60_cm", "30-60"),
-    "100_200" = c("100_200", "100-200cm", "100_cm", "150_cm")
+    "0_5" = c("0_5", "0-5cm", "_0_cm_p", "0-5"),
+    "5_15" = c("5_15", "5-15cm", "_5_cm_p", "0-25"),
+    "15_30" = c("15_30", "15-30cm", "_15_cm_p", "0-25", "25-50"),
+    "30_60" = c("30_60", "30-60cm", "_30_cm_p", "30-60", "25-50"),
+    "60_100" = c("60_100", "60-100cm", "_60_cm_p", "30-60"),
+    "100_200" = c("100_200", "100-200cm", "_100_cm_p", "_150_cm_p")
   )
 
   depth_range_lookup <- list(
@@ -29,30 +29,26 @@ ras_to_SPC <- function(rstack, source = "R") {
     "100_200" = c(100, 200)
   )
 
-  # Step 1: Flatten raster to dataframe
+  # Convert raster to dataframe
   df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
   df$peiid <- paste0(source, "_cell_", df$cell)
   site_data <- df %>% select(peiid, x, y)
 
-  # Pivot to long and match
+  # Reshape and extract depth info
   long_df <- df %>%
     select(-x, -y, -cell) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     rowwise() %>%
     mutate(
-      # Find exact match substring from the lookup values
       matched_label = {
-        matched <- NA_character_
         for (key in names(depth_interval_lookup)) {
-          for (pattern in depth_interval_lookup[[key]]) {
-            if (str_detect(layer, fixed(pattern))) {
-              matched <- key
-              break
+          for (val in depth_interval_lookup[[key]]) {
+            if (str_detect(layer, fixed(val))) {
+              return(key)
             }
           }
-          if (!is.na(matched)) break
         }
-        matched
+        NA_character_
       },
       hzdept = if (!is.na(matched_label)) {
         depth_range_lookup[[matched_label]][1]
@@ -64,30 +60,29 @@ ras_to_SPC <- function(rstack, source = "R") {
       } else {
         NA_real_
       },
-
-      # Extract the exact matched substring
       matched_string = if (!is.na(matched_label)) {
-        found <- NA_character_
-        for (pattern in depth_interval_lookup[[matched_label]]) {
-          if (str_detect(layer, fixed(pattern))) {
-            found <- pattern
-            break
+        match_val <- depth_interval_lookup[[matched_label]]
+        for (val in match_val) {
+          if (str_detect(layer, fixed(val))) {
+            return(val)
           }
         }
-        found
+        NA_character_
       } else {
         NA_character_
       },
-
-      # Now remove everything from the matched_string forward (including underscore if present)
       variable = if (!is.na(matched_string)) {
-        str_remove(layer, paste0("_?", fixed(matched_string), ".*$"))
+        # Remove matched string and anything trailing
+        str_remove(
+          layer,
+          paste0(fixed(matched_string), "$|", fixed(matched_string), "_")
+        )
       } else {
         NA_character_
       }
     ) %>%
     ungroup() %>%
-    filter(!is.na(hzdept), !is.na(hzdepb)) %>%
+    filter(!is.na(hzdept), !is.na(hzdepb), !is.na(variable)) %>%
     mutate(value = as.numeric(value)) %>%
     pivot_wider(names_from = variable, values_from = value)
 
