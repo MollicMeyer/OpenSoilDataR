@@ -17,7 +17,9 @@ For **local-scale, fine-resolution soil data**, refer to **SSURGO (Soil Survey G
 casoilresource.lawr.ucdavis.edu/soil-properties/.```
 - **SSURGO/gNATSGO/RSS (SGO)**  ```USDA Natural Resources Conservation Service, 2024. Soil Survey Geographic (SSURGO) Database. United States Department of Agriculture. Available at: https://sdmdataaccess.nrcs.usda.gov```
 
-- And compute **zonal statistics** for soil properties.
+- compute **zonal statistics** for soil properties
+- create **SoilProfileColletion** objects from **points**,**zones**, and **rasters**
+- plot comparison soil depth functions for different public soil dataset map products
 
 ---
 
@@ -53,129 +55,146 @@ gd_initialize()  # Initialize
 Set your area of interest (AOI) using a raster file:
 
 ````
-output_directory <- "path/to/output/directory"
-raster_path <- system.file("extdata", "Kitchen_DEM3mhillsh.tif", package = "OpenSoilDataR")
-aoi_raster <- rast(raster_path) 
 
-````
-🌍 Fetch Soil Property Data  
-1️⃣ Fetch PSP Data (POLARIS)
+```r
+aoi_path <- "T:/IA-Kitchen/R/sabR/SABRplots.shp"
+aoi <- terra::vect(aoi_path)
+```
 
-````
-psp_data <- fetch_PSP(
-  aoi = aoi_raster,
-  properties = c("om_mean", "clay_mean"),
-  depths = c("0_5", "5_15", "15_30"),
-  output_dir = output_directory,
-  suffix = "example",
+---
+
+## 🌍 Fetch Soil Property Data
+
+### PSP (POLARIS)
+
+```r
+psp <- fetch_PSP(
+  aoi = aoi,
+  properties = c("sand_mean", "clay_mean", "om_mean", "ph_mean"),
+  depths = c("0_5", "5_15", "15_30", "30_60", "60_100", "100_200"),
   crs = "EPSG:4326",
   scale = 30,
-  export = TRUE,
-  tosoc = TRUE, # converts to soc by van bemmelen 1.724
-  convertOM = TRUE # comes in log10, converts to %
+  tosoc = TRUE,
+  convertOM = TRUE,
+  export = FALSE
 )
+```
 
-# Plot the loaded SpatRaster
-plot(psp_data$stack)
+### SG2 (SoilGrids v2)
 
-````
-2️⃣ Fetch SG2 Data (SoilGrids v2)
-
-````
-sg2_data <- fetch_SG2(
-  aoi = aoi_raster,
-  properties = c("soc", "clay"),
-  depths = c("0-5cm", "5-15cm", "15-30cm"),
-  output_dir = output_directory,
-  suffix = "example",
+```r
+sg2 <- fetch_SG2(
+  aoi = aoi,
+  properties = c("sand", "clay", "soc", "phh2o"),
+  depths = c("0-5cm", "5-15cm", "15-30cm", "30-60cm", "60-100cm", "100-200cm"),
   crs = "EPSG:4326",
   scale = 250,
-  export = TRUE
+  export = FALSE
 )
+```
 
-# Plot the loaded SpatRaster
-plot(sg2_data$stack)
+### SOLUS100
 
-````
-
-3️⃣ Fetch SOL Data (SOLUS100) - This is slower for some non-integer files (soc) - has to download entire raster currently as hosted on google apis
-````
-sol_data <- fetch_SOL(
-  aoi = aoi_raster,
-  properties = c("claytotal"),
-  depths = c("0_cm", "5_cm", "15_cm"),
-  measures = c("p"),  #mean Prediction values "l" - 5th quantile - "h" 95th quantile - "rpi" - relative prediction interval, data heavy!!
-  output_dir = output_directory,
-  suffix = "example",
-  export = TRUE
+```r
+sol <- fetch_SOL(
+  aoi = aoi,
+  properties = c("sandtotal", "claytotal", "soc", "ph1to1h2o"),
+  depths = c("0_cm", "5_cm", "15_cm", "30_cm", "60_cm", "100_cm", "150_cm"),
+  measures = c("p"),
+  export = FALSE
 )
+```
 
-# Plot the loaded SpatRaster
-plot(sol_data$stack)
-````
-4️⃣ Fetch CSRL Data (Soil Props 800m) - The list is pretty exhaustive
-````
-csrl_data <- fetch_CSRL(
-  aoi= aoi_raster,
-  properties = c("som","clay_profile", "som_max"), ### som_max is percent by weight, som is omdensity kg/m2, does some conversions on the fly
-  depths= c("0-25", "0-5"),
-  output_dir= output_directory,
-  suffix= "",
-  crs= "EPSG:4326",
-  scale=800,
-  export=TRUE,
-  tosoc = TRUE)
-  
-# Plot the loaded SpatRaster
-plot(csrl_data$stack)
-````
-5️⃣ Fetch SGO Data (gSSURGO 30m) - The list is pretty exhaustive
-````
-sgo_data <- fetch_SGO(
-  aoi = aoi_raster,
-  properties = c("claytotal_r", "sandtotal_r", "om_r"),
-  depths = list(c(0, 5), c(5, 15), c(15,30)),
-  method = "Weighted Average",
+### SGO (SSURGO)
+
+```r
+sgo <- fetch_SGO(
+  aoi = aoi,
+  properties = c("sandtotal_r", "claytotal_r", "om_r", "ph1to1h2o_r"),
+  depths = list(c(0, 5), c(5, 15), c(15, 30), c(30, 60), c(60, 100), c(100, 200)),
   crs = "EPSG:4326",
   res = 30,
-  db = "gssurgo",
-  export = TRUE,
-  suffix = "ex",
-  tosoc =TRUE,
-  output_dir = output_directory
+  export = FALSE,
+  tosoc = TRUE
 )
+```
 
-# Plot the loaded SpatRaster
-plot(sgo_data$stack)
-````
+---
 
-📊 Compute Zonal Statistics  
-1️⃣ Load the Plot Shapefile
+## 📊 Zonal Statistics
 
-````
-library(sf)
-shapefile_path <- system.file("extdata", "SABRplots.shp", package = "OpenSoilDataR")
-zones <- st_read(shapefile_path)  # Read the shapefile
-#Note: The shapefile must contain a "Name" field for identifying individual plots.
+```r
+plots <- c("NE_plot", "NW_plot", "SE_plot", "SW_plot")
+std_props <- c("sand", "clay", "soc", "ph")
+tdepth <- 0
+bdepth <- 30
 
-````
-2️⃣ Run Zonal Statistics  
-Gets the depth weighted value if you take a 20cm slice
-````
-zonal_results <- s.zonalstats(
-  soil_data = list(sg2_data$stack, psp_data$stack, sol_data$stack, csrl_data$stack, sgo_data$stack),  # Multiple datasets
-  tdepth = 0,
-  bdepth = 20,
-  props = c("sand", "clay", "soc"),
-  shapes = zones,
-  plots = c("NW_plot", "SW_plot"),
-  stats = c("mean", "min", "max", "sd"),
-  wtd.mean = TRUE,
-  output_dir = "path/to/output/directory",
-  MakePlot = TRUE
-)
+z_psp <- s.zonalstats(psp$stack, tdepth, bdepth, std_props, aoi, plots, c("mean", "sd"), wtd.mean = TRUE)
+z_sg2 <- s.zonalstats(sg2$stack, tdepth, bdepth, std_props, aoi, plots, c("mean", "sd"), wtd.mean = TRUE)
+z_sol <- s.zonalstats(sol$stack, tdepth, bdepth, std_props, aoi, plots, c("mean", "sd"), wtd.mean = TRUE)
+z_sgo <- s.zonalstats(sgo$stack, tdepth, bdepth, std_props, aoi, plots, c("mean", "sd"), wtd.mean = TRUE)
+```
 
-# **Check output**
-print(zonal_results)
+Combine and visualize:
 
-````
+```r
+z_all <- bind_rows(z_psp$Weighted, z_sg2$Weighted, z_sol$Weighted, z_sgo$Weighted)
+z_wide <- z_all %>% pivot_wider(names_from = Statistic, values_from = ZonalStats)
+
+ggplot(z_wide, aes(x = Plot, y = mean, color = Product)) +
+  geom_point(position = position_dodge(0.6), size = 4) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), width = 0.5, position = position_dodge(0.6)) +
+  facet_wrap(~SoilProperty, scales = "free_y") +
+  theme_minimal(base_size = 13) +
+  labs(x = "Plot", y = "Mean ± SD", title = "Zonal Statistics by Plot and Product", color = "Product") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+---
+
+## 💼 SoilProfileCollection (SPC) Conversions
+
+### From Raster Stack (Global)
+
+```r
+sgo_spc <- ras_to_SPC(sgo$stack, source = "SGO")
+psp_spc <- ras_to_SPC(psp$stack, source = "PSP")
+sol_spc <- ras_to_SPC(sol$stack, source = "SOL")
+sg2_spc <- ras_to_SPC(sg2$stack, source = "SG2")
+
+spc_list <- list(sgo_spc, psp_spc, sg2_spc, sol_spc)
+plot_depth_functions(spc_list, c("SGO", "PSP", "SG2", "SOL"), c("sand", "clay", "soc", "ph"), c(0,5,15,30,60,100,150))
+```
+
+### From Polygons (Zone-Averaged)
+
+```r
+subset_ids <- c("NW_plot", "SW_plot", "NE_plot", "SE_plot")
+
+sgo_spc <- zones_to_SPC(sgo$stack, aoi, stat = "mean", id_column = "Name", subset_ids = subset_ids)
+psp_spc <- zones_to_SPC(psp$stack, aoi, stat = "mean", id_column = "Name", subset_ids = subset_ids)
+sol_spc <- zones_to_SPC(sol$stack, aoi, stat = "mean", id_column = "Name", subset_ids = subset_ids)
+sg2_spc <- zones_to_SPC(sg2$stack, aoi, stat = "mean", id_column = "Name", subset_ids = subset_ids)
+
+spc_list <- list(sgo_spc, psp_spc, sg2_spc, sol_spc)
+plot_depth_functions(spc_list, c("SGO", "PSP", "SG2", "SOL"), c("sand", "clay", "soc", "ph"), c(0,5,15,30,60,100,150))
+```
+
+### From Random Points
+
+```r
+set.seed(42)
+aoi_sf <- if (!inherits(aoi, "sf")) sf::st_as_sf(aoi) else aoi
+rand_pts <- sf::st_sample(aoi_sf, size = 25, type = "random") %>% sf::st_as_sf()
+rand_pts$Name <- paste0("pt_", seq_len(nrow(rand_pts)))
+
+sgo_spc <- pts_to_SPC(sgo$stack, rand_pts, id_column = "Name")
+psp_spc <- pts_to_SPC(psp$stack, rand_pts, id_column = "Name")
+sol_spc <- pts_to_SPC(sol$stack, rand_pts, id_column = "Name")
+sg2_spc <- pts_to_SPC(sg2$stack, rand_pts, id_column = "Name")
+
+spc_list <- list(sgo_spc, psp_spc, sg2_spc, sol_spc)
+plot_depth_functions(spc_list, c("SGO", "PSP", "SG2", "SOL"), c("sand", "clay", "soc", "ph"), c(0,5,15,30,60,100,150))
+```
+
+---
