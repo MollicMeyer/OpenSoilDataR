@@ -71,8 +71,9 @@ ras_to_SPC <- function(rstack, source = "R") {
       )
     ) %>%
     ungroup() %>%
-    mutate(value = as.numeric(value)) %>% # Fix for list-column issue
-    select(peiid, hzdept, hzdepb, variable, value)
+    select(peiid, hzdept, hzdepb, variable, value) %>%
+    group_by(peiid, hzdept, hzdepb, variable) %>%
+    summarise(value = first(value), .groups = "drop")
 
   # Pivot into horizon format
   hz_data <- long_df %>%
