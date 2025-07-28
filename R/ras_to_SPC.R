@@ -41,33 +41,27 @@ ras_to_SPC <- function(rstack, source = "R") {
     rowwise() %>%
     mutate(
       matched_label = {
+        matched <- NA_character_
         for (key in names(depth_interval_lookup)) {
           for (val in depth_interval_lookup[[key]]) {
             if (str_detect(layer, fixed(val))) {
-              return(key)
+              matched <- key
+              break
             }
           }
+          if (!is.na(matched)) break
         }
-        NA_character_
-      },
-      hzdept = if (!is.na(matched_label)) {
-        depth_range_lookup[[matched_label]][1]
-      } else {
-        NA_real_
-      },
-      hzdepb = if (!is.na(matched_label)) {
-        depth_range_lookup[[matched_label]][2]
-      } else {
-        NA_real_
+        matched
       },
       matched_string = if (!is.na(matched_label)) {
-        match_val <- depth_interval_lookup[[matched_label]]
-        for (val in match_val) {
+        match_found <- NA_character_
+        for (val in depth_interval_lookup[[matched_label]]) {
           if (str_detect(layer, fixed(val))) {
-            return(val)
+            match_found <- val
+            break
           }
         }
-        NA_character_
+        match_found
       } else {
         NA_character_
       },
