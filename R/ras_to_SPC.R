@@ -95,9 +95,11 @@ ras_to_SPC <- function(rstack, source = "R") {
     mutate(value = as.numeric(value)) %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  # Construct SoilProfileCollection
-  depths(long_df) <- peiid ~ hzdept + hzdepb
-  site(long_df) <- site_data
+  hz_data <- long_df %>%
+    select(-layer, -matched_label, -matched_string)
+
+  depths(hz_data) <- peiid ~ hzdept + hzdepb
+  site(hz_data) <- site_data
 
   return(long_df)
 }
